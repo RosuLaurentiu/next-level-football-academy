@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { HashRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
 import Challenges from "./Challenges";
 import CoachPanel from "./CoachPanel";
@@ -12,7 +12,7 @@ import { AppStateProvider } from "./appState";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AppStateProvider>
         <div className="app-shell">
           <Routes>
@@ -27,6 +27,6 @@ export default function App() {
           </Routes>
         </div>
       </AppStateProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
