@@ -1,0 +1,908 @@
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --bg: #eef6ff;
+  --bg-soft: #f8fbff;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-strong: #ffffff;
+  --line: rgba(20, 54, 117, 0.12);
+  --text: #142141;
+  --muted: #667697;
+  --green: #13c376;
+  --green-dark: #087145;
+  --blue: #2d6bff;
+  --cyan: #30d6ff;
+  --orange: #ff9621;
+  --gold: #ffc629;
+  --navy: #10244a;
+  --shadow: 0 20px 50px rgba(17, 40, 90, 0.14);
+  --shadow-soft: 0 14px 34px rgba(17, 40, 90, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(48, 214, 255, 0.35), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(255, 150, 33, 0.28), transparent 26%),
+    linear-gradient(180deg, #f7fbff 0%, #eef6ff 52%, #ebf4ff 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+.screen {
+  min-height: 100vh;
+  padding: 22px 18px 110px;
+}
+
+.screen--login {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+}
+
+.screen--centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stack {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.hero-card,
+.login-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 24%),
+    linear-gradient(145deg, var(--navy), #155d67 58%, #1f94ff 100%);
+  color: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.hero-card::before,
+.login-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 46px 46px;
+  opacity: 0.26;
+  pointer-events: none;
+}
+
+.hero-card--training {
+  background: linear-gradient(145deg, #084c3a, #14a562 55%, #30d6ff 100%);
+}
+
+.hero-card--challenge {
+  background: linear-gradient(145deg, #1b2b67, #ff9621 55%, #ffc629 100%);
+}
+
+.hero-card--leaderboard {
+  background: linear-gradient(145deg, #13254e, #2d6bff 50%, #30d6ff 100%);
+}
+
+.hero-card--profile {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  background: linear-gradient(145deg, #123567, #13c376 55%, #ffc629 100%);
+}
+
+.hero-card--coach {
+  background: linear-gradient(145deg, #2a2359, #2d6bff 45%, #ff9621 100%);
+}
+
+.hero-card__eyebrow,
+.section-title__eyebrow,
+.task-card__eyebrow,
+.card__eyebrow {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+.hero-card h1,
+.login-hero h1,
+.card h2,
+.challenge-card h2,
+.task-card h2,
+.section-title h2,
+.not-found-card h1 {
+  margin: 8px 0 6px;
+  font-family: "Baloo 2", cursive;
+  line-height: 1;
+}
+
+.hero-card h1,
+.login-hero h1 {
+  font-size: 2rem;
+}
+
+.hero-card p,
+.login-hero p {
+  margin: 0;
+  max-width: 32ch;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hero-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.hero-chip-row {
+  display: grid;
+  gap: 8px;
+}
+
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.hero-chip__icon,
+.truth-row__icon,
+.message-banner__icon,
+.button__icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.hero-card__quote {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+}
+
+.hero-card__quote--light {
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.hero-card__quote-icon,
+.action-card__icon,
+.login-hero__ball-icon,
+.bottom-nav__icon,
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
+.hero-card__icon-wrap {
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  margin-bottom: 12px;
+}
+
+.hero-card__icon {
+  width: 26px;
+  height: 26px;
+}
+
+.card,
+.podium-card,
+.challenge-card,
+.task-card,
+.message-banner,
+.metric-card,
+.action-card,
+.not-found-card {
+  background: var(--surface);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-soft);
+}
+
+.card,
+.challenge-card,
+.task-card,
+.podium-card,
+.not-found-card {
+  padding: 18px;
+  border-radius: 24px;
+}
+
+.card--compact {
+  padding: 16px;
+}
+
+.card--highlight {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.92), rgba(255, 246, 214, 0.94));
+}
+
+.card p,
+.challenge-card p,
+.task-card p,
+.metric-card small,
+.section-title p,
+.demo-row p,
+.truth-row p,
+.message-banner p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.section-title {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.card-tag-row,
+.challenge-name-list,
+.badge-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(45, 107, 255, 0.08);
+  color: #234075;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.tag--wide {
+  padding-inline: 14px;
+}
+
+.action-grid,
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stats-grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.action-card {
+  padding: 18px;
+  border-radius: 24px;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.action-card:active {
+  transform: scale(0.98);
+}
+
+.action-card--warm {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.95), rgba(255, 239, 208, 0.95));
+}
+
+.action-card strong,
+.metric-card strong,
+.demo-row strong,
+.leaderboard-row__player strong,
+.podium__item strong,
+.badge-pill strong,
+.profile-summary strong,
+.coach-note strong {
+  display: block;
+  color: var(--text);
+}
+
+.action-card span,
+.metric-card span,
+.leaderboard-row__player span,
+.podium__item span,
+.badge-pill span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.action-card__icon {
+  width: 24px;
+  height: 24px;
+  color: var(--blue);
+  margin-bottom: 10px;
+}
+
+.mini-track,
+.progress-track {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(20, 33, 65, 0.08);
+}
+
+.mini-track {
+  height: 8px;
+  margin-top: 14px;
+}
+
+.mini-track__fill,
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+}
+
+.progress-card {
+  position: relative;
+  z-index: 1;
+  margin-top: 16px;
+}
+
+.progress-card__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.progress-track {
+  height: 12px;
+}
+
+.metric-card {
+  padding: 16px;
+  border-radius: 22px;
+}
+
+.metric-card strong {
+  font-size: 1.7rem;
+  font-family: "Baloo 2", cursive;
+  line-height: 1;
+  margin: 6px 0;
+}
+
+.metric-card small {
+  display: block;
+  font-size: 0.76rem;
+}
+
+.message-banner,
+.truth-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: 20px;
+}
+
+.truth-row {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.login-tabs,
+.segment-control {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.login-tabs__button,
+.segment-control__button {
+  padding: 12px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.login-tabs__button--active,
+.segment-control__button--active {
+  background: var(--surface-strong);
+  color: var(--text);
+  box-shadow: var(--shadow-soft);
+}
+
+.login-card {
+  display: grid;
+  gap: 16px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.label {
+  display: grid;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(20, 54, 117, 0.1);
+  border-radius: 18px;
+  background: rgba(245, 249, 255, 0.95);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.input:focus {
+  border-color: rgba(45, 107, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.input--textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-weight: 800;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.button--large {
+  min-height: 58px;
+  font-size: 1rem;
+}
+
+.button--primary {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--green-dark), var(--green) 55%, var(--cyan));
+}
+
+.button--secondary {
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 218, 173, 0.96));
+}
+
+.button--ghost {
+  color: var(--text);
+  background: rgba(20, 33, 65, 0.06);
+}
+
+.button--dark {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--navy), #1b3270);
+}
+
+.avatar-picker {
+  display: grid;
+  gap: 10px;
+}
+
+.avatar-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.avatar-option {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgba(245, 249, 255, 0.95);
+  border: 1px solid rgba(20, 54, 117, 0.08);
+  color: var(--text);
+}
+
+.avatar-option--active {
+  border-color: rgba(45, 107, 255, 0.42);
+  box-shadow: 0 10px 18px rgba(45, 107, 255, 0.12);
+}
+
+.avatar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #ffffff;
+  font-family: "Baloo 2", cursive;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.avatar-badge--small {
+  width: 42px;
+  height: 42px;
+  font-size: 0.92rem;
+}
+
+.avatar-badge--medium {
+  width: 50px;
+  height: 50px;
+  font-size: 1rem;
+}
+
+.avatar-badge--large {
+  width: 82px;
+  height: 82px;
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+}
+
+.avatar-badge--green {
+  background: linear-gradient(135deg, #0f8a56, #13c376);
+}
+
+.avatar-badge--orange {
+  background: linear-gradient(135deg, #d96d00, #ff9621);
+}
+
+.avatar-badge--blue {
+  background: linear-gradient(135deg, #244cc7, #2d6bff);
+}
+
+.avatar-badge--gold {
+  background: linear-gradient(135deg, #d49300, #ffc629);
+}
+
+.demo-row,
+.profile-summary {
+  display: grid;
+  gap: 12px;
+}
+
+.demo-row {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.profile-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.task-card,
+.challenge-card {
+  display: grid;
+  gap: 14px;
+}
+
+.task-card--green {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(227, 255, 243, 0.94));
+}
+
+.task-card--orange {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(255, 240, 220, 0.95));
+}
+
+.task-card--blue {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(228, 239, 255, 0.95));
+}
+
+.task-card--gold {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(255, 247, 215, 0.95));
+}
+
+.task-card__header,
+.challenge-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.task-card__xp,
+.challenge-card__lock {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(20, 33, 65, 0.06);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.challenge-card__lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.challenge-card__lock-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.task-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text);
+}
+
+.task-steps li {
+  line-height: 1.4;
+}
+
+.task-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.coach-note {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(20, 33, 65, 0.05);
+}
+
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-width: 140px;
+  padding: 10px 14px;
+  border-radius: 18px;
+}
+
+.badge-pill--green {
+  background: rgba(19, 195, 118, 0.12);
+}
+
+.badge-pill--orange {
+  background: rgba(255, 150, 33, 0.14);
+}
+
+.badge-pill--blue {
+  background: rgba(45, 107, 255, 0.12);
+}
+
+.badge-pill--gold {
+  background: rgba(255, 198, 41, 0.18);
+}
+
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.podium__item {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.podium__item--first {
+  order: 2;
+}
+
+.podium__item:first-child:not(.podium__item--first) {
+  order: 1;
+}
+
+.podium__item:last-child {
+  order: 3;
+}
+
+.podium__stand {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 20px 20px 0 0;
+  color: #ffffff;
+  font-weight: 800;
+  background: linear-gradient(180deg, #2d6bff, #123567);
+}
+
+.podium__stand--1 {
+  min-height: 130px;
+}
+
+.podium__stand--2 {
+  min-height: 105px;
+}
+
+.podium__stand--3 {
+  min-height: 86px;
+}
+
+.leaderboard-list {
+  display: grid;
+  gap: 10px;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-soft);
+}
+
+.leaderboard-row--active {
+  border-color: rgba(45, 107, 255, 0.35);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(228, 239, 255, 0.95));
+}
+
+.leaderboard-row__rank,
+.leaderboard-row__xp {
+  font-size: 0.86rem;
+}
+
+.bottom-nav {
+  position: fixed;
+  z-index: 30;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(392px, calc(100% - 24px));
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px;
+  border-radius: 26px;
+  background: rgba(16, 36, 74, 0.92);
+  box-shadow: 0 20px 42px rgba(10, 20, 40, 0.26);
+  backdrop-filter: blur(16px);
+}
+
+.bottom-nav__link {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 10px 6px;
+  border-radius: 18px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.bottom-nav__link--active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.empty-copy {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.not-found-card {
+  max-width: 340px;
+  text-align: center;
+}
+
+.login-hero {
+  display: grid;
+  gap: 18px;
+}
+
+.login-hero__ball {
+  width: 66px;
+  height: 66px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.15);
+  animation: float 4.8s ease-in-out infinite;
+}
+
+.login-hero__ball-icon {
+  width: 34px;
+  height: 34px;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (max-width: 420px) {
+  .screen {
+    padding-inline: 14px;
+  }
+
+  .task-card__actions,
+  .action-grid,
+  .stats-grid,
+  .stats-grid--three,
+  .profile-summary,
+  .demo-row {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-card__top {
+    flex-direction: column;
+  }
+
+  .bottom-nav {
+    width: calc(100% - 16px);
+  }
+}
