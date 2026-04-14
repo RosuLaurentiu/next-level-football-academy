@@ -662,7 +662,7 @@ begin
   where user_id = target_user_id;
 
   insert into public.admin_bonus_xp_logs (player_user_id, xp, reason, created_by)
-  values (target_user_id, 0, 'Scoruri eliminate: ' || reason_text, auth.uid());
+  values (target_user_id, 1, 'Scoruri eliminate: ' || reason_text, auth.uid());
 
   return jsonb_build_object('ok', true, 'removedXp', removed_xp);
 end;
