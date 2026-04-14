@@ -5,20 +5,30 @@ import { AvatarBadge, BottomNav, Icon } from "./ui";
 
 export default function Leaderboard() {
   const {
+    dailyLeaderboard,
+    currentDailyRank,
     monthlyLeaderboard,
     currentMonthlyRank,
     currentWeeklyRank,
     player,
     weeklyLeaderboard,
   } = useAppState();
-  const [tab, setTab] = useState<"weekly" | "monthly">("weekly");
+  const [tab, setTab] = useState<"daily" | "weekly" | "monthly">("daily");
 
   if (!player) {
     return <Navigate to="/" replace />;
   }
 
-  const activeBoard = tab === "weekly" ? weeklyLeaderboard : monthlyLeaderboard;
-  const currentRank = tab === "weekly" ? currentWeeklyRank : currentMonthlyRank;
+  const activeBoard = tab === "daily"
+    ? dailyLeaderboard
+    : tab === "weekly"
+      ? weeklyLeaderboard
+      : monthlyLeaderboard;
+  const currentRank = tab === "daily"
+    ? currentDailyRank
+    : tab === "weekly"
+      ? currentWeeklyRank
+      : currentMonthlyRank;
   const podium = activeBoard.slice(0, 3);
   const rest = activeBoard.slice(3);
 
@@ -27,8 +37,14 @@ export default function Leaderboard() {
       <section className="hero-card hero-card--leaderboard">
         <span className="hero-card__eyebrow">Ecranul clasamentului</span>
         <h1>Top 10 jucători</h1>
-        <p>Clasamentele săptămânale și lunare păstrează academia competitivă și distractivă.</p>
+        <p>Clasamentele zilnice, săptămânale și lunare păstrează academia competitivă și distractivă.</p>
         <div className="segment-control">
+          <button
+            className={tab === "daily" ? "segment-control__button segment-control__button--active" : "segment-control__button"}
+            onClick={() => setTab("daily")}
+          >
+            Clasament zilnic
+          </button>
           <button
             className={tab === "weekly" ? "segment-control__button segment-control__button--active" : "segment-control__button"}
             onClick={() => setTab("weekly")}
@@ -73,7 +89,7 @@ export default function Leaderboard() {
               <AvatarBadge avatarId={entry.avatarId} size="small" />
               <div className="leaderboard-row__player">
                 <strong>{entry.username}</strong>
-                <span>Nivel {entry.level} | {entry.streak} zile consecutive</span>
+                <span>Nivel {entry.level} | {entry.streak} zile consecutive | {entry.completedTrainings} antrenamente</span>
               </div>
               <div className="leaderboard-row__xp">{entry.xp} XP</div>
             </div>
@@ -85,7 +101,7 @@ export default function Leaderboard() {
             <div className="truth-row">
               <Icon name="leaderboard" className="truth-row__icon" />
               <p>
-                Locul tău {tab === "weekly" ? "săptămânal" : "lunar"} este #{currentRank.rank}. Continuă tot așa și poți urca în top 10.
+                Locul tău {tab === "daily" ? "zilnic" : tab === "weekly" ? "săptămânal" : "lunar"} este #{currentRank.rank}. Continuă tot așa și poți urca în top 10.
               </p>
             </div>
           </div>

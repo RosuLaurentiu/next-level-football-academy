@@ -16,6 +16,7 @@ function getStorageKeys(userKey: string) {
   return {
     favorites: `next-level-favorites-${userKey}`,
     history: `next-level-history-${userKey}`,
+    sound: `next-level-sound-${userKey}`,
   };
 }
 
@@ -47,14 +48,14 @@ function getModuleStateLabel(task: TrainingTask, completed: boolean) {
   }
 
   if (task.category === "Mental") {
-    return "Pregătit pentru focus";
+    return "Focus de academie";
   }
 
   if (task.category === "Fizic") {
-    return "Pregătit pentru mișcare";
+    return "Motor activ";
   }
 
-  return "Pregătit pentru minge";
+  return "Control premium";
 }
 
 function postYouTubeCommand(iframe: HTMLIFrameElement | null, command: "playVideo" | "pauseVideo") {
@@ -72,6 +73,39 @@ function postYouTubeCommand(iframe: HTMLIFrameElement | null, command: "playVide
   );
 }
 
+function playSuccessTone() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioCtx) {
+    return;
+  }
+
+  const audioContext = new AudioCtx();
+  const gainNode = audioContext.createGain();
+  const oscillator = audioContext.createOscillator();
+  const oscillator2 = audioContext.createOscillator();
+
+  gainNode.gain.value = 0.0001;
+  gainNode.connect(audioContext.destination);
+  oscillator.type = "triangle";
+  oscillator2.type = "triangle";
+  oscillator.frequency.setValueAtTime(660, audioContext.currentTime);
+  oscillator2.frequency.setValueAtTime(880, audioContext.currentTime + 0.08);
+  oscillator.connect(gainNode);
+  oscillator2.connect(gainNode);
+
+  gainNode.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.32);
+
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + 0.22);
+  oscillator2.start(audioContext.currentTime + 0.08);
+  oscillator2.stop(audioContext.currentTime + 0.32);
+}
+
 export default function Training() {
   const navigate = useNavigate();
   const {
@@ -81,16 +115,19 @@ export default function Training() {
     todayCompletedTaskIds,
     todayKey,
     todayPlan,
-    todayQuote,
   } = useAppState();
 
-  const [message, setMessage] = useState("Urmează ordinea modulelor și confirmă doar după antrenament real.");
+  const [message, setMessage] = useState("Urmeaza ordinea modulelor. Progresul vine din munca reala.");
   const [activeTask, setActiveTask] = useState<TrainingTask | null>(null);
   const [modalSource, setModalSource] = useState<"today" | "history">("today");
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [videoReloadKey, setVideoReloadKey] = useState(0);
   const [videoPaused, setVideoPaused] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [lastXpGain, setLastXpGain] = useState<number | null>(null);
+  const [levelUpMessage, setLevelUpMessage] = useState<string | null>(null);
+  const [xpToast, setXpToast] = useState<string | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [history, setHistory] = useState<TrainingHistoryEntry[]>([]);
   const videoFrameRef = useRef<HTMLIFrameElement | null>(null);
@@ -106,17 +143,21 @@ export default function Training() {
     try {
       const rawFavorites = window.localStorage.getItem(storageKeys.favorites);
       const rawHistory = window.localStorage.getItem(storageKeys.history);
+      const rawSound = window.localStorage.getItem(storageKeys.sound);
       if (rawFavorites) {
         setFavoriteIds(JSON.parse(rawFavorites) as string[]);
       }
       if (rawHistory) {
         setHistory(JSON.parse(rawHistory) as TrainingHistoryEntry[]);
       }
+      if (rawSound !== null) {
+        setSoundEnabled(rawSound === "on");
+      }
     } catch {
       setFavoriteIds([]);
       setHistory([]);
     }
-  }, [storageKeys.favorites, storageKeys.history]);
+  }, [storageKeys.favorites, storageKeys.history, storageKeys.sound]);
 
   useEffect(() => {
     window.localStorage.setItem(storageKeys.favorites, JSON.stringify(favoriteIds));
@@ -125,6 +166,10 @@ export default function Training() {
   useEffect(() => {
     window.localStorage.setItem(storageKeys.history, JSON.stringify(history.slice(0, 40)));
   }, [history, storageKeys.history]);
+
+  useEffect(() => {
+    window.localStorage.setItem(storageKeys.sound, soundEnabled ? "on" : "off");
+  }, [soundEnabled, storageKeys.sound]);
 
   const completedCount = todayCompletedTaskIds.length;
   const progress = Math.round((completedCount / todayPlan.tasks.length) * 100);
@@ -145,7 +190,7 @@ export default function Training() {
   const steps = activeTask && activeTask.steps.length > 0
     ? activeTask.steps
     : activeTask
-      ? [{ title: "Instrucțiuni", description: activeTask.description }]
+      ? [{ title: "Instructiuni", description: activeTask.description }]
       : [];
   const currentStep = steps[activeStepIndex];
   const stepVideoUrl = currentStep?.videoUrl ?? activeTask?.videoUrl;
@@ -204,6 +249,11 @@ export default function Training() {
     setVideoPaused(false);
   };
 
+  const showXpPopup = (text: string) => {
+    setXpToast(text);
+    window.setTimeout(() => setXpToast(null), 1800);
+  };
+
   const finishModule = async () => {
     if (!activeTask) {
       return;
@@ -221,6 +271,19 @@ export default function Training() {
       return;
     }
 
+    const gainedXp = result.xpGained ?? activeTask.xp;
+    setLastXpGain(gainedXp);
+    showXpPopup(`+${gainedXp} XP | Ai devenit mai bun azi!`);
+    if (soundEnabled) {
+      playSuccessTone();
+    }
+
+    if (result.leveledUp && result.newLevel) {
+      setLevelUpMessage(`Ai urcat la nivel! Nivel ${result.newLevel.level} - ${result.newLevel.title}`);
+    } else {
+      setLevelUpMessage(null);
+    }
+
     const historyEntry: TrainingHistoryEntry = {
       uid: `${activeTask.id}-${todayKey}`,
       completedAt: new Date().toISOString(),
@@ -233,21 +296,21 @@ export default function Training() {
   };
 
   const openBonusChallenge = (challenge: Challenge) => {
-    setMessage(`Provocarea bonus este pregătită: ${challenge.title}. Intră în zona provocărilor și atacă scorul.`);
+    setMessage(`Provocarea e live: ${challenge.title}. Ataca scorul si urca in clasament.`);
     navigate("/challenges");
   };
 
   return (
     <div className="screen">
       <section className="hero-card hero-card--training">
-        <span className="hero-card__eyebrow">Antrenamentul Zilei</span>
-        <h1>{todayPlan.title}</h1>
-        <p>{todayPlan.theme}</p>
+        <span className="hero-card__eyebrow">NEXT LEVEL FOOTBALL ACADEMY</span>
+        <h1>Antrenamentul de azi</h1>
+        <p>Mental. Fizic. Tehnic. Apoi bonus.</p>
         <div className="hero-card__quote hero-card__quote--light">
           <Icon name="training" className="hero-card__quote-icon" />
           <p>{formatLongDate(todayKey)}</p>
         </div>
-        <ProgressBar value={progress} label={`${completedCount}/${todayPlan.tasks.length} module de bază finalizate`} />
+        <ProgressBar value={progress} label={`${completedCount}/${todayPlan.tasks.length} module finalizate`} />
       </section>
 
       <div className="stack">
@@ -256,13 +319,43 @@ export default function Training() {
           <p>{message}</p>
         </div>
 
+        <div className="card card--compact">
+          <div className="task-card__actions">
+            <button
+              className="button button--ghost"
+              onClick={() => setSoundEnabled((current) => !current)}
+            >
+              Sunet motivatie: {soundEnabled ? "Pornit" : "Oprit"}
+            </button>
+            <button className="button button--secondary" onClick={() => showXpPopup("Continua, campionule!")}>
+              Test popup XP
+            </button>
+          </div>
+        </div>
+
+        {lastXpGain !== null && (
+          <div className="card card--highlight">
+            <span className="card__eyebrow">XP castigat</span>
+            <h2>+{lastXpGain} XP</h2>
+            <p>Esti la un pas de urmatorul nivel!</p>
+          </div>
+        )}
+
+        {levelUpMessage && (
+          <div className="card card--highlight card--levelup">
+            <span className="card__eyebrow">NIVEL NOU</span>
+            <h2>{levelUpMessage}</h2>
+            <p>Antrenament de academie. Crestere reala.</p>
+          </div>
+        )}
+
         {todayPlan.tasks.map((task, index) => {
           const completed = todayCompletedTaskIds.includes(task.id);
           const isFavorite = favoriteIds.includes(task.id);
           const stepCount = task.steps.length > 0 ? task.steps.length : 1;
 
           return (
-            <div key={task.id} className={`task-card task-card--${task.accent}`}>
+            <div key={task.id} className={`task-card task-card--${task.accent} ${completed ? "task-card--done" : ""}`}>
               <div className="task-card__header">
                 <div>
                   <span className="task-card__eyebrow">{`${index + 1}. ${task.category}`}</span>
@@ -276,13 +369,13 @@ export default function Training() {
               <div className="card-tag-row">
                 <span className="tag">{task.duration}</span>
                 <span className="tag">{task.focus}</span>
-                <span className="tag">{stepCount} pași</span>
+                <span className="tag">{stepCount} pasi</span>
                 <span className="tag">{getModuleStateLabel(task, completed)}</span>
               </div>
 
               <div className="task-card__actions">
                 <button className="button button--ghost" onClick={() => toggleFavorite(task.id)}>
-                  {isFavorite ? "Scoate de la favorite" : "Adaugă la favorite"}
+                  {isFavorite ? "Scoate din favorite" : "Adauga la favorite"}
                 </button>
                 <button className="button button--primary" onClick={() => openTrainingModal(task, "today")}>
                   Deschide modulul
@@ -312,7 +405,7 @@ export default function Training() {
           <div className="challenge-card__header">
             <div>
               <span className="task-card__eyebrow">4. Provocare bonus</span>
-              <h2>{bonusChallenge ? bonusChallenge.title : "Provocarea bonus se pregătește"}</h2>
+              <h2>{bonusChallenge ? bonusChallenge.title : "Provocarea bonus se pregateste"}</h2>
             </div>
             <div className="challenge-card__lock">
               <span>{bonusChallenge ? `${bonusChallenge.xp} XP` : "Bonus"}</span>
@@ -322,18 +415,18 @@ export default function Training() {
           <p>
             {bonusChallenge
               ? bonusChallenge.description
-              : "Astăzi nu ai o provocare bonus nouă. Revino după ce îți crește nivelul sau păstrează seria activă."}
+              : "Pastreaza ritmul. Bonusul nou vine curand."}
           </p>
 
           <div className="card-tag-row">
             <span className="tag">{bonusChallenge?.duration ?? "5-20 min"}</span>
             <span className="tag">{bonusChallenge?.target ?? "Scor bonus"}</span>
-            <span className="tag">Impact în clasament</span>
+            <span className="tag">Impact in clasament</span>
           </div>
 
           {bonusChallenge && (
             <div className="coach-note">
-              <strong>Provocarea zilei</strong>
+              <strong>Mesaj de coach</strong>
               <p>{getQuoteOfTheDay([bonusChallenge.rewardText, bonusChallenge.coachNote], todayKey)}</p>
             </div>
           )}
@@ -344,14 +437,14 @@ export default function Training() {
               onClick={() => bonusChallenge && openBonusChallenge(bonusChallenge)}
               disabled={!bonusChallenge}
             >
-              Începe
+              Incepe
             </button>
             <button
               className="button button--primary"
               onClick={() => navigate("/challenges")}
               disabled={!bonusChallenge}
             >
-              {bonusCompleted ? "Deja finalizată" : "Vezi provocarea"}
+              {bonusCompleted ? "Deja finalizata" : "Vezi provocarea"}
             </button>
           </div>
         </div>
@@ -360,7 +453,7 @@ export default function Training() {
           <span className="card__eyebrow">Istoric</span>
           <h2>Revezi module finalizate</h2>
           {uniqueHistory.length === 0 ? (
-            <p className="empty-copy">Când finalizezi module, ele apar aici pentru revedere.</p>
+            <p className="empty-copy">Finalizeaza un modul si il poti revedea oricand.</p>
           ) : (
             <div className="leaderboard-list">
               {uniqueHistory.slice(0, 8).map((entry) => (
@@ -382,20 +475,22 @@ export default function Training() {
           <div className="truth-row">
             <Icon name="bolt" className="truth-row__icon" />
             <p>
-              Termină cele 3 module de bază ca să deblochezi bonusul complet de {SESSION_BONUS_XP} XP.
-              {sessionBonusEarned ? " Bonusul a fost deja câștigat azi." : ""}
+              Termina cele 3 module de baza ca sa deblochezi bonusul complet de {SESSION_BONUS_XP} XP.
+              {sessionBonusEarned ? " Bonusul este deja in cont." : ""}
             </p>
           </div>
         </div>
 
         {coreModulesDone && (
-          <div className="card card--highlight">
-            <span className="card__eyebrow">Succes!</span>
+          <div className="card card--highlight celebration-card">
+            <span className="card__eyebrow">ACADEMY STATUS</span>
             <h2>Antrenamentul de azi este gata!</h2>
-            <p>Ai terminat modulele Mental, Fizic și Tehnic. Dacă vrei extra puncte XP, atacă și provocarea bonus.</p>
+            <p>Ai terminat sesiunea completa. Esti in crestere reala, zi dupa zi.</p>
           </div>
         )}
       </div>
+
+      {xpToast && <div className="xp-toast">{xpToast}</div>}
 
       {activeTask && (
         <div className="training-modal" role="dialog" aria-modal="true">
@@ -409,13 +504,13 @@ export default function Training() {
                     <p>{activeTask.duration}</p>
                   </div>
                   <button className="button button--ghost training-modal__close" onClick={closeTrainingModal}>
-                    Închide
+                    Inchide
                   </button>
                 </div>
 
                 <div className="training-modal__progress">
                   <strong>Pasul {Math.min(activeStepIndex + 1, steps.length)} din {steps.length}</strong>
-                  <p>{currentStep?.title ?? "Instrucțiuni"}</p>
+                  <p>{currentStep?.title ?? "Instructiuni"}</p>
                 </div>
 
                 <div className="training-modal__video">
@@ -430,30 +525,30 @@ export default function Training() {
                     />
                   ) : (
                     <div className="training-modal__video-fallback">
-                      Video indisponibil pentru acest pas. Continuă cu instrucțiunile.
+                      Video indisponibil pentru acest pas. Continua cu instructiunile.
                     </div>
                   )}
                 </div>
 
                 <div className="coach-note">
-                  <strong>Instrucțiuni simple</strong>
+                  <strong>Instructiuni simple</strong>
                   <p>{currentStep?.description ?? activeTask.description}</p>
                 </div>
 
                 <div className="training-modal__actions">
-                  <button className="button button--secondary" onClick={handleReplay}>Repetă video</button>
+                  <button className="button button--secondary" onClick={handleReplay}>Repeta video</button>
                   <button className="button button--ghost" onClick={handlePauseResume}>
-                    {videoPaused ? "Reia video" : "Pauză video"}
+                    {videoPaused ? "Reia video" : "Pauza video"}
                   </button>
                   {activeStepIndex < steps.length - 1 ? (
-                    <button className="button button--dark" onClick={goToNextStep}>Pasul următor</button>
+                    <button className="button button--dark" onClick={goToNextStep}>Pasul urmator</button>
                   ) : (
                     <button
                       className="button button--primary"
                       onClick={() => void finishModule()}
                       disabled={modalSource === "today" && todayCompletedTaskIds.includes(activeTask.id)}
                     >
-                      {modalSource === "history" ? "Am revăzut modulul" : "Completează modulul"}
+                      {modalSource === "history" ? "Am revazut modulul" : "Completeaza modulul"}
                     </button>
                   )}
                 </div>
@@ -461,8 +556,8 @@ export default function Training() {
             ) : (
               <div className="training-modal__success">
                 <h2>Bravo! Ai terminat acest modul!</h2>
-                <p>Punctele XP au fost acordate, progresul este salvat, iar clasamentul s-a actualizat.</p>
-                <button className="button button--primary" onClick={closeTrainingModal}>Continuă</button>
+                <p>Ai devenit mai bun azi! XP-ul este salvat si clasamentul s-a actualizat.</p>
+                <button className="button button--primary" onClick={closeTrainingModal}>Continua</button>
               </div>
             )}
           </div>

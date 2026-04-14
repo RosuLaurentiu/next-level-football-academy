@@ -450,6 +450,7 @@ async function fetchRemoteSnapshot(userId: string, todayKey: string) {
     customChallenges: (coachChallengeResult.data ?? []).map(mapCoachChallenge),
     todayPlan,
     todayChallenge,
+    dailyLeaderboard: buildLeaderboardFromSnapshots("daily", snapshots, userId, todayKey),
     weeklyLeaderboard: buildLeaderboardFromSnapshots("weekly", snapshots, userId, todayKey),
     monthlyLeaderboard: buildLeaderboardFromSnapshots("monthly", snapshots, userId, todayKey),
     activeUsers: activeUsersResult.count ?? allProfiles.length,
@@ -490,6 +491,8 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
   const [todayChallenge, setTodayChallenge] = useState<Challenge | null>(null);
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<RankedPlayer[]>([]);
   const [monthlyLeaderboard, setMonthlyLeaderboard] = useState<RankedPlayer[]>([]);
+  const [dailyLeaderboard, setDailyLeaderboard] = useState<RankedPlayer[]>([]);
+  const [currentDailyRank, setCurrentDailyRank] = useState<RankedPlayer | null>(null);
   const [currentWeeklyRank, setCurrentWeeklyRank] = useState<RankedPlayer | null>(null);
   const [currentMonthlyRank, setCurrentMonthlyRank] = useState<RankedPlayer | null>(null);
   const [activeUsers, setActiveUsers] = useState(0);
@@ -504,6 +507,8 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
     setCustomChallenges([]);
     setGeneratedTodayPlan(null);
     setTodayChallenge(null);
+    setDailyLeaderboard([]);
+    setCurrentDailyRank(null);
     setWeeklyLeaderboard([]);
     setMonthlyLeaderboard([]);
     setCurrentWeeklyRank(null);
@@ -511,21 +516,27 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
     setActiveUsers(0);
   };
 
+  const applySnapshot = (snapshot: Awaited<ReturnType<typeof fetchRemoteSnapshot>>) => {
+    setPlayer(snapshot.player);
+    setQuotes(snapshot.quotes.length > 0 ? snapshot.quotes : DEFAULT_QUOTES);
+    setCustomChallenges(snapshot.customChallenges);
+    setGeneratedTodayPlan(snapshot.todayPlan);
+    setTodayChallenge(snapshot.todayChallenge);
+    setDailyLeaderboard(snapshot.dailyLeaderboard.topTen);
+    setCurrentDailyRank(snapshot.dailyLeaderboard.currentUser);
+    setWeeklyLeaderboard(snapshot.weeklyLeaderboard.topTen);
+    setMonthlyLeaderboard(snapshot.monthlyLeaderboard.topTen);
+    setCurrentWeeklyRank(snapshot.weeklyLeaderboard.currentUser);
+    setCurrentMonthlyRank(snapshot.monthlyLeaderboard.currentUser);
+    setActiveUsers(snapshot.activeUsers);
+  };
+
   const loadSignedInState = async (userId: string) => {
     setInitializing(true);
 
     try {
       const snapshot = await fetchRemoteSnapshot(userId, todayKey);
-      setPlayer(snapshot.player);
-      setQuotes(snapshot.quotes.length > 0 ? snapshot.quotes : DEFAULT_QUOTES);
-      setCustomChallenges(snapshot.customChallenges);
-      setGeneratedTodayPlan(snapshot.todayPlan);
-      setTodayChallenge(snapshot.todayChallenge);
-      setWeeklyLeaderboard(snapshot.weeklyLeaderboard.topTen);
-      setMonthlyLeaderboard(snapshot.monthlyLeaderboard.topTen);
-      setCurrentWeeklyRank(snapshot.weeklyLeaderboard.currentUser);
-      setCurrentMonthlyRank(snapshot.monthlyLeaderboard.currentUser);
-      setActiveUsers(snapshot.activeUsers);
+      applySnapshot(snapshot);
       return true;
     } catch (error) {
       console.error("Nu s-a putut încărca starea aplicației din Supabase", error);
@@ -743,6 +754,8 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
       return { ok: false, message: "Autentifică-te mai întâi ca să-ți salvezi antrenamentul." };
     }
 
+    const previousTotalXp = player.totalXp;
+    const previousLevelInfo = getLevelInfo(previousTotalXp);
     const task = todayPlan.tasks.find((entry) => entry.id === taskId);
     if (!task) {
       return { ok: false, message: "Acest exercițiu nu este în planul de azi." };
@@ -760,8 +773,26 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
       return { ok: false, message: formatSupabaseError(error.message) };
     }
 
-    await loadSignedInState(currentUserId);
-    return { ok: true, message: `${task.title} este finalizat. Ai câștigat puncte XP prin antrenament real!` };
+    try {
+      const snapshot = await fetchRemoteSnapshot(currentUserId, todayKey);
+      applySnapshot(snapshot);
+      const gainedXp = Math.max(0, snapshot.player.totalXp - previousTotalXp);
+      const newLevelInfo = getLevelInfo(snapshot.player.totalXp);
+      return {
+        ok: true,
+        message: `${task.title} este finalizat. Ai câștigat puncte XP prin antrenament real!`,
+        xpGained: gainedXp,
+        leveledUp: newLevelInfo.level > previousLevelInfo.level,
+        newLevel: newLevelInfo,
+      };
+    } catch (snapshotError) {
+      console.error("Nu s-a putut reîncărca progresul după finalizarea modulului", snapshotError);
+      await loadSignedInState(currentUserId);
+      return {
+        ok: true,
+        message: `${task.title} este finalizat. Progresul va fi actualizat imediat ce conexiunea revine stabilă.`,
+      };
+    }
   };
 
   const completeChallenge = async (challengeId: string) => {
@@ -769,6 +800,8 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
       return { ok: false, message: "Autentifică-te mai întâi ca să-ți salvezi provocarea." };
     }
 
+    const previousTotalXp = player.totalXp;
+    const previousLevelInfo = getLevelInfo(previousTotalXp);
     const challenge = allChallenges.find((entry) => entry.id === challengeId);
     if (!challenge) {
       return { ok: false, message: "Această provocare nu a putut fi găsită." };
@@ -787,8 +820,26 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
       return { ok: false, message: formatSupabaseError(error.message) };
     }
 
-    await loadSignedInState(currentUserId);
-    return { ok: true, message: `${challenge.title} este finalizată. Insignă deblocată!` };
+    try {
+      const snapshot = await fetchRemoteSnapshot(currentUserId, todayKey);
+      applySnapshot(snapshot);
+      const gainedXp = Math.max(0, snapshot.player.totalXp - previousTotalXp);
+      const newLevelInfo = getLevelInfo(snapshot.player.totalXp);
+      return {
+        ok: true,
+        message: `${challenge.title} este finalizată. Insignă deblocată!`,
+        xpGained: gainedXp,
+        leveledUp: newLevelInfo.level > previousLevelInfo.level,
+        newLevel: newLevelInfo,
+      };
+    } catch (snapshotError) {
+      console.error("Nu s-a putut reîncărca progresul după provocare", snapshotError);
+      await loadSignedInState(currentUserId);
+      return {
+        ok: true,
+        message: `${challenge.title} este finalizată. Progresul va fi actualizat imediat ce conexiunea revine stabilă.`,
+      };
+    }
   };
 
   const addCoachQuote = async (quote: string) => {
@@ -900,6 +951,8 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
       levelInfo,
       streakDays,
       allChallenges,
+      dailyLeaderboard,
+      currentDailyRank,
       weeklyLeaderboard,
       monthlyLeaderboard,
       currentWeeklyRank,
@@ -919,7 +972,9 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
       activeUsers,
       allChallenges,
       currentMonthlyRank,
+      currentDailyRank,
       currentWeeklyRank,
+      dailyLeaderboard,
       isAdmin,
       initializing,
       levelInfo,

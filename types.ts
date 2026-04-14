@@ -118,6 +118,7 @@ export interface RankedPlayer {
   xp: number;
   level: number;
   streak: number;
+  completedTrainings: number;
   isCurrentUser?: boolean;
 }
 

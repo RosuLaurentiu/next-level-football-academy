@@ -11,11 +11,11 @@ type ModuleCategory = "Mental" | "Fizic" | "Tehnic";
 interface CoachModuleRow { id: number; category: ModuleCategory; title: string; duration: string; xp: number; is_active: boolean; }
 interface CoachChallengeRow { id: string; title: string; duration: string; xp: number; level_required: number; is_active: boolean; }
 interface AdminUserRow { user_id: string; username: string; email: string | null; role: "player" | "admin"; is_suspended: boolean; total_xp: number; streak_days: number; completed_challenges: number; }
-interface AdminSettingsRow { challenge_frequency_days: number; daily_reset_time: string; auto_generator_enabled: boolean; xp_mental: number; xp_physical: number; xp_technical: number; xp_challenge: number; app_announcement: string; maintenance_mode: boolean; }
+interface AdminSettingsRow { challenge_frequency_days: number; daily_reset_time: string; auto_generator_enabled: boolean; xp_mental: number; xp_physical: number; xp_technical: number; xp_challenge: number; session_bonus_xp: number; streak_bonus_3: number; streak_bonus_7: number; streak_bonus_14: number; streak_penalty_mode: "reset" | "partial"; app_announcement: string; maintenance_mode: boolean; }
 interface DashboardSnapshot { totalUsers: number; activeUsersToday: number; completedTrainingsToday: number; pendingIssues: number; topPlayersWeek: Array<{ username: string; xp: number }>; }
 
 const defaultDashboard: DashboardSnapshot = { totalUsers: 0, activeUsersToday: 0, completedTrainingsToday: 0, pendingIssues: 0, topPlayersWeek: [] };
-const defaultSettings: AdminSettingsRow = { challenge_frequency_days: 1, daily_reset_time: "00:00:00", auto_generator_enabled: true, xp_mental: 25, xp_physical: 35, xp_technical: 45, xp_challenge: 120, app_announcement: "", maintenance_mode: false };
+const defaultSettings: AdminSettingsRow = { challenge_frequency_days: 1, daily_reset_time: "00:00:00", auto_generator_enabled: true, xp_mental: 25, xp_physical: 35, xp_technical: 45, xp_challenge: 120, session_bonus_xp: 60, streak_bonus_3: 45, streak_bonus_7: 120, streak_bonus_14: 260, streak_penalty_mode: "reset", app_announcement: "", maintenance_mode: false };
 
 function nextDayKey() { const d = new Date(); d.setDate(d.getDate() + 1); return getTodayKey(d); }
 
@@ -211,9 +211,17 @@ export default function CoachPanel() {
               <input className="input" type="number" min={0} value={settings.xp_physical} onChange={(e) => setSettings((p) => ({ ...p, xp_physical: Number(e.target.value) }))} />
               <input className="input" type="number" min={0} value={settings.xp_technical} onChange={(e) => setSettings((p) => ({ ...p, xp_technical: Number(e.target.value) }))} />
               <input className="input" type="number" min={0} value={settings.xp_challenge} onChange={(e) => setSettings((p) => ({ ...p, xp_challenge: Number(e.target.value) }))} />
+              <input className="input" type="number" min={0} value={settings.session_bonus_xp} onChange={(e) => setSettings((p) => ({ ...p, session_bonus_xp: Number(e.target.value) }))} />
+              <input className="input" type="number" min={0} value={settings.streak_bonus_3} onChange={(e) => setSettings((p) => ({ ...p, streak_bonus_3: Number(e.target.value) }))} />
+              <input className="input" type="number" min={0} value={settings.streak_bonus_7} onChange={(e) => setSettings((p) => ({ ...p, streak_bonus_7: Number(e.target.value) }))} />
+              <input className="input" type="number" min={0} value={settings.streak_bonus_14} onChange={(e) => setSettings((p) => ({ ...p, streak_bonus_14: Number(e.target.value) }))} />
+              <select className="input" value={settings.streak_penalty_mode} onChange={(e) => setSettings((p) => ({ ...p, streak_penalty_mode: e.target.value as "reset" | "partial" }))}>
+                <option value="reset">Penalty streak: reset total</option>
+                <option value="partial">Penalty streak: minus 1 zi</option>
+              </select>
               <textarea className="input input--textarea" value={settings.app_announcement} onChange={(e) => setSettings((p) => ({ ...p, app_announcement: e.target.value }))} />
               <label className="label">Maintenance mode <input type="checkbox" checked={settings.maintenance_mode} onChange={(e) => setSettings((p) => ({ ...p, maintenance_mode: e.target.checked }))} /></label>
-              <button className="button button--primary" onClick={async () => { if (!supabase) { return; } const r = await supabase.rpc("admin_update_settings", { challenge_frequency: settings.challenge_frequency_days, reset_clock: settings.daily_reset_time, auto_generator: settings.auto_generator_enabled, xp_mental_input: settings.xp_mental, xp_physical_input: settings.xp_physical, xp_technical_input: settings.xp_technical, xp_challenge_input: settings.xp_challenge, announcement_text: settings.app_announcement, maintenance_enabled: settings.maintenance_mode }); setMessage(r.error ? r.error.message : "Setări salvate."); if (!r.error) { await loadData(); } }}>Salvează setările</button>
+              <button className="button button--primary" onClick={async () => { if (!supabase) { return; } const r = await supabase.rpc("admin_update_settings", { challenge_frequency: settings.challenge_frequency_days, reset_clock: settings.daily_reset_time, auto_generator: settings.auto_generator_enabled, xp_mental_input: settings.xp_mental, xp_physical_input: settings.xp_physical, xp_technical_input: settings.xp_technical, xp_challenge_input: settings.xp_challenge, session_bonus_xp_input: settings.session_bonus_xp, streak_bonus_3_input: settings.streak_bonus_3, streak_bonus_7_input: settings.streak_bonus_7, streak_bonus_14_input: settings.streak_bonus_14, streak_penalty_mode_input: settings.streak_penalty_mode, announcement_text: settings.app_announcement, maintenance_enabled: settings.maintenance_mode }); setMessage(r.error ? r.error.message : "Setări salvate."); if (!r.error) { await loadData(); } }}>Salvează setările</button>
             </div>
           </div>
         )}

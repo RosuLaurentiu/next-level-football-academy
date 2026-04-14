@@ -15,6 +15,11 @@ import type {
 
 export const SESSION_BONUS_XP = 60;
 export const CONSISTENCY_BONUS_XP = 120;
+export const STREAK_BONUS_XP = {
+  3: 45,
+  7: 120,
+  14: 260,
+} as const;
 
 export const AVATARS: AvatarOption[] = [
   { id: "rocket", label: "Rachetă", initials: "RK", accent: "orange", glow: "#ff9a1f" },
@@ -24,13 +29,26 @@ export const AVATARS: AvatarOption[] = [
 ];
 
 export const LEVELS = [
-  { level: 1, title: "Rookie de acasă", minXp: 0, nextXp: 120 },
-  { level: 2, title: "Constructor de atingeri", minXp: 120, nextXp: 280 },
-  { level: 3, title: "Playmaker de cartier", minXp: 280, nextXp: 500 },
-  { level: 4, title: "Căpitanul antrenamentului", minXp: 500, nextXp: 780 },
-  { level: 5, title: "Liderul academiei", minXp: 780, nextXp: 1120 },
-  { level: 6, title: "Schimbător de joc", minXp: 1120, nextXp: 1500 },
-  { level: 7, title: "Steaua Next Level", minXp: 1500, nextXp: null },
+  { level: 1, title: "Începător", minXp: 0, nextXp: 120 },
+  { level: 2, title: "Explorator de mingi", minXp: 120, nextXp: 280 },
+  { level: 3, title: "Control în creștere", minXp: 280, nextXp: 500 },
+  { level: 4, title: "Ritm de academie", minXp: 500, nextXp: 780 },
+  { level: 5, title: "Jucător în dezvoltare", minXp: 780, nextXp: 1120 },
+  { level: 6, title: "Motor de antrenament", minXp: 1120, nextXp: 1520 },
+  { level: 7, title: "Creator de faze", minXp: 1520, nextXp: 1980 },
+  { level: 8, title: "Strateg de teren", minXp: 1980, nextXp: 2500 },
+  { level: 9, title: "Viteză și control", minXp: 2500, nextXp: 3080 },
+  { level: 10, title: "Jucător avansat", minXp: 3080, nextXp: 3720 },
+  { level: 11, title: "Playmaker de elită", minXp: 3720, nextXp: 4420 },
+  { level: 12, title: "Lider de vestiar", minXp: 4420, nextXp: 5180 },
+  { level: 13, title: "Forță și tehnică", minXp: 5180, nextXp: 6000 },
+  { level: 14, title: "Minte de campion", minXp: 6000, nextXp: 6880 },
+  { level: 15, title: "Căpitan Next Level", minXp: 6880, nextXp: 7820 },
+  { level: 16, title: "Arhitect de joc", minXp: 7820, nextXp: 8820 },
+  { level: 17, title: "Maestru al ritmului", minXp: 8820, nextXp: 9880 },
+  { level: 18, title: "Stea în ascensiune", minXp: 9880, nextXp: 11000 },
+  { level: 19, title: "Dominant pe teren", minXp: 11000, nextXp: 12180 },
+  { level: 20, title: "Elite Academy Player", minXp: 12180, nextXp: null },
 ];
 
 function createMentalTask(
@@ -479,6 +497,24 @@ export function calculateStreak(trainingLog: TrainingLogEntry[], todayKey: strin
   return streak;
 }
 
+export function calculateCompletedTrainings(
+  trainingLog: TrainingLogEntry[],
+  todayKey: string,
+  days: number,
+): number {
+  const today = parseDateKey(todayKey);
+  const uniqueTrainingDays = new Set(
+    trainingLog
+      .filter((entry) => entry.taskId !== "session-bonus" && !entry.taskId.startsWith("consistency-"))
+      .map((entry) => entry.dateKey),
+  );
+
+  return [...uniqueTrainingDays].reduce((total, dateKey) => {
+    const difference = getDaysBetween(today, parseDateKey(dateKey));
+    return difference >= 0 && difference < days ? total + 1 : total;
+  }, 0);
+}
+
 export function calculateRecentXp(profile: PlayerProfile, days: number, todayKey: string): number {
   const today = parseDateKey(todayKey);
   const trainingXp = profile.trainingLog.reduce((total, entry) => {
@@ -577,19 +613,34 @@ export function createPlayerProfile(username: string, avatarId: string): PlayerP
 }
 
 export function buildLeaderboard(
-  mode: "weekly" | "monthly",
+  mode: "daily" | "weekly" | "monthly",
   profile: PlayerProfile,
   todayKey: string,
   leaderboardSeed: number,
 ): { topTen: RankedPlayer[]; currentUser: RankedPlayer } {
-  const basePlayers = mode === "weekly" ? WEEKLY_RIVALS : MONTHLY_RIVALS;
-  const userXp = mode === "weekly" ? calculateRecentXp(profile, 7, todayKey) : profile.totalXp;
+  const basePlayers = mode === "monthly" ? MONTHLY_RIVALS : WEEKLY_RIVALS;
+  const userXp = mode === "daily"
+    ? calculateRecentXp(profile, 1, todayKey)
+    : mode === "weekly"
+      ? calculateRecentXp(profile, 7, todayKey)
+      : profile.totalXp;
   const userLevel = getLevelInfo(profile.totalXp).level;
   const userStreak = calculateStreak(profile.trainingLog, todayKey);
+  const userCompletedTrainings = calculateCompletedTrainings(
+    profile.trainingLog,
+    todayKey,
+    mode === "daily" ? 1 : mode === "weekly" ? 7 : 30,
+  );
+  const offsetRange = mode === "daily" ? 8 : mode === "weekly" ? 20 : 48;
 
   const seededPlayers = basePlayers.map((player, index) => {
-    const offset = (leaderboardSeed * 17 + index * 9) % (mode === "weekly" ? 20 : 48);
+    const offset = (leaderboardSeed * 17 + index * 9) % offsetRange;
     const xp = player.xp + offset;
+    const completedTrainings = mode === "daily"
+      ? Math.max(0, Math.min(1, Math.round((player.streak + index) % 2)))
+      : mode === "weekly"
+        ? Math.max(1, Math.min(7, player.streak + (index % 3)))
+        : Math.max(3, Math.min(28, player.streak * 2 + (index % 6)));
 
     return {
       username: player.username,
@@ -597,6 +648,7 @@ export function buildLeaderboard(
       xp,
       level: getLevelInfo(xp).level,
       streak: player.streak,
+      completedTrainings,
       isCurrentUser: false,
     };
   });
@@ -609,10 +661,19 @@ export function buildLeaderboard(
       xp: userXp,
       level: userLevel,
       streak: userStreak,
+      completedTrainings: userCompletedTrainings,
       isCurrentUser: true,
     },
   ]
-    .sort((first, second) => second.xp - first.xp)
+    .sort((first, second) => {
+      if (second.xp !== first.xp) {
+        return second.xp - first.xp;
+      }
+      if (second.streak !== first.streak) {
+        return second.streak - first.streak;
+      }
+      return second.completedTrainings - first.completedTrainings;
+    })
     .map((player, index) => ({
       ...player,
       rank: index + 1,
@@ -627,31 +688,35 @@ export function buildLeaderboard(
 }
 
 export function buildLeaderboardFromSnapshots(
-  mode: "weekly" | "monthly",
+  mode: "daily" | "weekly" | "monthly",
   snapshots: LeaderboardProfileSnapshot[],
   currentUserId: string,
   todayKey: string,
 ): { topTen: RankedPlayer[]; currentUser: RankedPlayer | null } {
   const allPlayers = snapshots
     .map((snapshot) => {
-      const xp = mode === "weekly"
-        ? calculateRecentXp(
-            {
-              userId: snapshot.userId,
-              username: snapshot.username,
-              avatarId: snapshot.avatarId,
-              totalXp: snapshot.totalXp,
-              completedChallengeIds: [],
-              trainingLog: snapshot.trainingLog,
-              challengeLog: snapshot.challengeLog,
-              unlockedBadges: [],
-              consistencyRewardMilestones: [],
-              createdAt: todayKey,
-            },
-            7,
-            todayKey,
-          )
-        : snapshot.totalXp;
+      const snapshotProfile: PlayerProfile = {
+        userId: snapshot.userId,
+        username: snapshot.username,
+        avatarId: snapshot.avatarId,
+        totalXp: snapshot.totalXp,
+        completedChallengeIds: [],
+        trainingLog: snapshot.trainingLog,
+        challengeLog: snapshot.challengeLog,
+        unlockedBadges: [],
+        consistencyRewardMilestones: [],
+        createdAt: todayKey,
+      };
+      const xp = mode === "daily"
+        ? calculateRecentXp(snapshotProfile, 1, todayKey)
+        : mode === "weekly"
+          ? calculateRecentXp(snapshotProfile, 7, todayKey)
+          : snapshot.totalXp;
+      const completedTrainings = calculateCompletedTrainings(
+        snapshot.trainingLog,
+        todayKey,
+        mode === "daily" ? 1 : mode === "weekly" ? 7 : 30,
+      );
 
       return {
         userId: snapshot.userId,
@@ -660,10 +725,19 @@ export function buildLeaderboardFromSnapshots(
         xp,
         level: getLevelInfo(snapshot.totalXp).level,
         streak: calculateStreak(snapshot.trainingLog, todayKey),
+        completedTrainings,
         isCurrentUser: snapshot.userId === currentUserId,
       };
     })
-    .sort((first, second) => second.xp - first.xp)
+    .sort((first, second) => {
+      if (second.xp !== first.xp) {
+        return second.xp - first.xp;
+      }
+      if (second.streak !== first.streak) {
+        return second.streak - first.streak;
+      }
+      return second.completedTrainings - first.completedTrainings;
+    })
     .map((player, index) => ({
       ...player,
       rank: index + 1,

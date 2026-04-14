@@ -11,6 +11,9 @@ export interface ActionResult {
   ok: boolean;
   message: string;
   requiresVerification?: boolean;
+  xpGained?: number;
+  leveledUp?: boolean;
+  newLevel?: LevelInfo;
 }
 
 export interface AppStateContextValue {
@@ -29,6 +32,8 @@ export interface AppStateContextValue {
   allChallenges: Challenge[];
   weeklyLeaderboard: RankedPlayer[];
   monthlyLeaderboard: RankedPlayer[];
+  dailyLeaderboard: RankedPlayer[];
+  currentDailyRank: RankedPlayer | null;
   currentWeeklyRank: RankedPlayer | null;
   currentMonthlyRank: RankedPlayer | null;
   activeUsers: number;

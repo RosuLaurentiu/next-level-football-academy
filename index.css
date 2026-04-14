@@ -987,6 +987,230 @@ button {
   }
 }
 
+/* Premium academy visual override */
+:root {
+  --bg: #090d18;
+  --bg-soft: #11192b;
+  --surface: rgba(17, 27, 44, 0.88);
+  --surface-strong: #131f36;
+  --line: rgba(98, 125, 191, 0.26);
+  --text: #f2f7ff;
+  --muted: #9fb1d4;
+  --green: #10d193;
+  --green-dark: #06956c;
+  --blue: #4aa2ff;
+  --cyan: #71e6ff;
+  --orange: #ff5a57;
+  --gold: #ffd451;
+  --navy: #0c162c;
+  --shadow: 0 20px 58px rgba(0, 0, 0, 0.5);
+  --shadow-soft: 0 16px 34px rgba(0, 0, 0, 0.35);
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(74, 162, 255, 0.26), transparent 32%),
+    radial-gradient(circle at 86% 8%, rgba(255, 90, 87, 0.2), transparent 30%),
+    radial-gradient(circle at 84% 100%, rgba(16, 209, 147, 0.15), transparent 34%),
+    linear-gradient(180deg, #080c16 0%, #0b1222 54%, #0a101e 100%);
+}
+
+.screen {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.card,
+.podium-card,
+.challenge-card,
+.task-card,
+.message-banner,
+.metric-card,
+.action-card,
+.not-found-card {
+  animation: rise-in 0.3s ease;
+}
+
+.hero-card {
+  background:
+    radial-gradient(circle at 16% 18%, rgba(113, 230, 255, 0.16), transparent 26%),
+    linear-gradient(145deg, #0d1831, #13284f 55%, #1d3f7b 100%);
+}
+
+.hero-card--training {
+  background: linear-gradient(145deg, #10233f, #0c4c66 54%, #1e7dc4 100%);
+}
+
+.hero-card--challenge {
+  background: linear-gradient(145deg, #2a1935, #3f2965 44%, #ff5a57 100%);
+}
+
+.hero-card--leaderboard {
+  background: linear-gradient(145deg, #0e2142, #1a3d79 54%, #4aa2ff 100%);
+}
+
+.hero-card--profile {
+  background: linear-gradient(145deg, #10223d, #1f3c69 55%, #0b8d7a 100%);
+}
+
+.hero-card--coach {
+  background: linear-gradient(145deg, #1f1d47, #264d89 45%, #ff5a57 100%);
+}
+
+.card--highlight {
+  background: linear-gradient(150deg, rgba(19, 36, 62, 0.96), rgba(34, 34, 60, 0.96));
+}
+
+.tag {
+  background: rgba(74, 162, 255, 0.16);
+  color: #cae6ff;
+}
+
+.action-card--warm {
+  background: linear-gradient(150deg, rgba(24, 37, 61, 0.95), rgba(48, 24, 48, 0.95));
+}
+
+.mini-track,
+.progress-track {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.mini-track__fill,
+.progress-fill {
+  background: linear-gradient(90deg, #ff5a57, #4aa2ff 58%, #71e6ff);
+}
+
+.login-tabs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.segment-control {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.login-tabs__button,
+.segment-control__button {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.login-tabs__button--active,
+.segment-control__button--active {
+  background: linear-gradient(135deg, rgba(74, 162, 255, 0.3), rgba(255, 90, 87, 0.28));
+  color: #ffffff;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #d92b45, #ff5a57 52%, #ff8d5f);
+}
+
+.button--secondary {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(57, 99, 182, 0.9), rgba(74, 162, 255, 0.95));
+}
+
+.button--ghost {
+  color: #e8f2ff;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.button--dark {
+  background: linear-gradient(135deg, #10203d, #1a3d79);
+}
+
+.task-card--green {
+  background: linear-gradient(150deg, rgba(16, 39, 46, 0.96), rgba(18, 55, 61, 0.96));
+}
+
+.task-card--orange {
+  background: linear-gradient(150deg, rgba(45, 26, 35, 0.96), rgba(64, 28, 38, 0.96));
+}
+
+.task-card--blue {
+  background: linear-gradient(150deg, rgba(16, 33, 58, 0.96), rgba(20, 49, 86, 0.96));
+}
+
+.task-card--gold {
+  background: linear-gradient(150deg, rgba(45, 39, 20, 0.96), rgba(60, 48, 24, 0.96));
+}
+
+.task-card--done {
+  border-color: rgba(16, 209, 147, 0.7);
+  box-shadow: 0 0 0 1px rgba(16, 209, 147, 0.4), 0 14px 30px rgba(6, 149, 108, 0.28);
+}
+
+.leaderboard-row {
+  background: rgba(17, 27, 44, 0.9);
+}
+
+.leaderboard-row--active {
+  border-color: rgba(255, 90, 87, 0.58);
+  background: linear-gradient(135deg, rgba(42, 25, 43, 0.96), rgba(20, 43, 73, 0.96));
+}
+
+.academy-level-badge {
+  min-width: 86px;
+  border-radius: 18px;
+  padding: 8px 12px;
+  background: linear-gradient(145deg, rgba(255, 90, 87, 0.32), rgba(74, 162, 255, 0.28));
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.academy-level-badge span {
+  display: block;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.academy-level-badge strong {
+  display: block;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.hero-chip-row--academy {
+  justify-items: end;
+}
+
+.card--levelup {
+  border-color: rgba(255, 212, 81, 0.65);
+  box-shadow: 0 0 0 1px rgba(255, 212, 81, 0.3), 0 16px 36px rgba(255, 166, 51, 0.3);
+}
+
+.celebration-card {
+  border-color: rgba(16, 209, 147, 0.65);
+  box-shadow: 0 0 0 1px rgba(16, 209, 147, 0.34), 0 18px 40px rgba(16, 209, 147, 0.22);
+}
+
+.xp-toast {
+  position: fixed;
+  z-index: 80;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(255, 90, 87, 0.96), rgba(74, 162, 255, 0.96));
+  color: #fff;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.4);
+  animation: rise-in 0.2s ease;
+}
+
+@keyframes rise-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 420px) {
   .screen {
     padding-inline: 14px;

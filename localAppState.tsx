@@ -6,8 +6,8 @@ import {
 } from "react";
 import {
   BASE_CHALLENGES,
-  CONSISTENCY_BONUS_XP,
   SESSION_BONUS_XP,
+  STREAK_BONUS_XP,
   awardMilestoneBadges,
   buildLeaderboard,
   calculateStreak,
@@ -96,6 +96,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
   const todayQuote = getQuoteOfTheDay(store.quotes, todayKey);
   const weeklyRankings = player ? buildLeaderboard("weekly", player, todayKey, store.leaderboardSeed) : null;
   const monthlyRankings = player ? buildLeaderboard("monthly", player, todayKey, store.leaderboardSeed) : null;
+  const dailyRankings = player ? buildLeaderboard("daily", player, todayKey, store.leaderboardSeed) : null;
 
   const login = async (username: string, password: string) => {
     const cleanUsername = normaliseUsername(username);
@@ -161,6 +162,11 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       return { ok: false, message: "Acest exercițiu este deja finalizat azi." };
     }
 
+    const previousTotalXp = player.totalXp;
+    const previousLevel = getLevelInfo(previousTotalXp).level;
+    let earnedXp = 0;
+    let reachedLevel = previousLevel;
+
     setStore((currentStore) => {
       const currentProfile = currentStore.profiles[currentUsername];
       const updatedTrainingLog = [
@@ -207,30 +213,33 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       }
 
       const streak = calculateStreak(updatedProfile.trainingLog, todayKey);
-      const completedMilestone = Math.floor(streak / 7);
-      const alreadyAwardedMilestone = updatedProfile.consistencyRewardMilestones.includes(completedMilestone);
-
-      if (completedMilestone > 0 && !alreadyAwardedMilestone) {
-        updatedProfile = {
-          ...updatedProfile,
-          totalXp: updatedProfile.totalXp + CONSISTENCY_BONUS_XP,
-          consistencyRewardMilestones: [
-            ...updatedProfile.consistencyRewardMilestones,
-            completedMilestone,
-          ],
-          trainingLog: [
-            ...updatedProfile.trainingLog,
-            {
-              dateKey: todayKey,
-              taskId: `consistency-${completedMilestone}`,
-              taskTitle: "Bonus pentru 7 zile de constanță",
-              xp: CONSISTENCY_BONUS_XP,
-            },
-          ],
-        };
+      for (const streakTarget of [3, 7, 14] as const) {
+        const alreadyAwardedMilestone = updatedProfile.consistencyRewardMilestones.includes(streakTarget);
+        if (streak >= streakTarget && !alreadyAwardedMilestone) {
+          const streakBonusXp = STREAK_BONUS_XP[streakTarget];
+          updatedProfile = {
+            ...updatedProfile,
+            totalXp: updatedProfile.totalXp + streakBonusXp,
+            consistencyRewardMilestones: [
+              ...updatedProfile.consistencyRewardMilestones,
+              streakTarget,
+            ],
+            trainingLog: [
+              ...updatedProfile.trainingLog,
+              {
+                dateKey: todayKey,
+                taskId: `consistency-${streakTarget}`,
+                taskTitle: `Bonus pentru seria de ${streakTarget} zile`,
+                xp: streakBonusXp,
+              },
+            ],
+          };
+        }
       }
 
       updatedProfile = awardMilestoneBadges(updatedProfile, todayKey);
+      earnedXp = updatedProfile.totalXp - previousTotalXp;
+      reachedLevel = getLevelInfo(updatedProfile.totalXp).level;
 
       return {
         ...currentStore,
@@ -241,7 +250,14 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       };
     });
 
-    return { ok: true, message: `${task.title} este finalizat. Ai câștigat puncte XP prin antrenament real!` };
+    const newLevelInfo = getLevelInfo(previousTotalXp + earnedXp);
+    return {
+      ok: true,
+      message: `${task.title} este finalizat. Ai câștigat puncte XP prin antrenament real!`,
+      xpGained: earnedXp,
+      leveledUp: reachedLevel > previousLevel,
+      newLevel: newLevelInfo,
+    };
   };
 
   const completeChallenge = async (challengeId: string) => {
@@ -261,6 +277,11 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
     if (player.completedChallengeIds.includes(challengeId)) {
       return { ok: false, message: "Insigna acestei provocări este deja în colecția ta." };
     }
+
+    const previousTotalXp = player.totalXp;
+    const previousLevel = getLevelInfo(previousTotalXp).level;
+    let earnedXp = challenge.xp;
+    let reachedLevel = previousLevel;
 
     setStore((currentStore) => {
       const currentProfile = currentStore.profiles[currentUsername];
@@ -283,6 +304,8 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       };
 
       updatedProfile = awardMilestoneBadges(updatedProfile, todayKey);
+      earnedXp = updatedProfile.totalXp - previousTotalXp;
+      reachedLevel = getLevelInfo(updatedProfile.totalXp).level;
 
       return {
         ...currentStore,
@@ -293,7 +316,14 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       };
     });
 
-    return { ok: true, message: `${challenge.title} este finalizată. Insignă deblocată!` };
+    const newLevelInfo = getLevelInfo(previousTotalXp + earnedXp);
+    return {
+      ok: true,
+      message: `${challenge.title} este finalizată. Insignă deblocată!`,
+      xpGained: earnedXp,
+      leveledUp: reachedLevel > previousLevel,
+      newLevel: newLevelInfo,
+    };
   };
 
   const addCoachQuote = async (quote: string) => {
@@ -380,6 +410,8 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       levelInfo,
       streakDays,
       allChallenges,
+      dailyLeaderboard: dailyRankings?.topTen ?? [],
+      currentDailyRank: dailyRankings?.currentUser ?? null,
       weeklyLeaderboard: weeklyRankings?.topTen ?? [],
       monthlyLeaderboard: monthlyRankings?.topTen ?? [],
       currentWeeklyRank: weeklyRankings?.currentUser ?? null,
@@ -397,6 +429,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
     }),
     [
       allChallenges,
+      dailyRankings,
       isAdmin,
       levelInfo,
       monthlyRankings,

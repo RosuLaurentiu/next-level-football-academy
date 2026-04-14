@@ -8,6 +8,7 @@ export default function Home() {
   const {
     player,
     allChallenges,
+    currentDailyRank,
     currentWeeklyRank,
     levelInfo,
     streakDays,
@@ -30,17 +31,30 @@ export default function Home() {
   const nextChallenge = todayChallenge ?? fallbackChallenge;
   const nextTask = todayPlan.tasks.find((task) => !todayCompletedTaskIds.includes(task.id)) ?? todayPlan.tasks[0];
   const sessionProgress = Math.round((todayCompletedTaskIds.length / todayPlan.tasks.length) * 100);
+  const xpToNextLevel = levelInfo.nextXp ? Math.max(0, levelInfo.nextXp - player.totalXp) : 0;
+  const missionCopy = todayCompletedTaskIds.length === 0
+    ? "E timpul sa urci nivelul!"
+    : todayCompletedTaskIds.length < todayPlan.tasks.length
+      ? "Continua, campionule! Academia te urmareste."
+      : "Antrenament finalizat. Progres real.";
+  const retentionCopy = todayCompletedTaskIds.length === todayPlan.tasks.length
+    ? "Misiunea de maine se pregateste..."
+    : "Nu rupe seria! Esti la 1 pas de urmatorul nivel!";
 
   return (
     <div className="screen">
       <section className="hero-card">
         <div className="hero-card__top">
           <div>
-            <span className="hero-card__eyebrow">Bine ai revenit, campionule!</span>
+            <span className="hero-card__eyebrow">NEXT LEVEL FOOTBALL ACADEMY</span>
             <h1>{player.username}</h1>
             <p>{formatLongDate(todayKey)}</p>
           </div>
-          <div className="hero-chip-row">
+          <div className="hero-chip-row hero-chip-row--academy">
+            <div className="academy-level-badge">
+              <span>NIVEL</span>
+              <strong>{levelInfo.level}</strong>
+            </div>
             <div className="hero-chip">
               <Icon name="bolt" className="hero-chip__icon" />
               <span>{player.totalXp} puncte XP</span>
@@ -61,17 +75,26 @@ export default function Home() {
           value={levelInfo.progress}
           label={
             levelInfo.nextXp
-              ? `Nivel ${levelInfo.level} ${levelInfo.title} | ${levelInfo.nextXp - player.totalXp} XP până la nivelul următor`
+              ? `Nivel ${levelInfo.level} ${levelInfo.title} | ${xpToNextLevel} XP pana la urmatorul nivel`
               : `Nivel ${levelInfo.level} ${levelInfo.title}`
           }
         />
       </section>
 
       <div className="stack">
+        <div className="card card--highlight">
+          <span className="card__eyebrow">Misiunea ta de azi</span>
+          <h2>{missionCopy}</h2>
+          <p>{nextTask.title} | {nextTask.duration} | {nextTask.xp} XP</p>
+          <button className="button button--primary button--large" onClick={() => navigate("/training")}>
+            Incepe antrenamentul
+          </button>
+        </div>
+
         <div className="action-grid">
           <button className="action-card" onClick={() => navigate("/training")}>
             <Icon name="training" className="action-card__icon" />
-            <strong>Antrenamentul Zilei</strong>
+            <strong>Baza ta de antrenament</strong>
             <span>{todayCompletedTaskIds.length} din 3 module finalizate</span>
             <div className="mini-track">
               <div className="mini-track__fill" style={{ width: `${sessionProgress}%` }} />
@@ -80,26 +103,26 @@ export default function Home() {
 
           <button className="action-card action-card--warm" onClick={() => navigate("/challenges")}>
             <Icon name="trophy" className="action-card__icon" />
-            <strong>Zona Provocărilor</strong>
-            <span>{player.completedChallengeIds.length} insigne câștigate până acum</span>
+            <strong>Zona provocarilor</strong>
+            <span>{player.completedChallengeIds.length} insigne castigate pana acum</span>
           </button>
         </div>
 
         <div className="card card--highlight">
-          <span className="card__eyebrow">Misiunea ta de azi</span>
-          <h2>{nextChallenge ? nextChallenge.title : "Ai terminat toate provocările deblocate"}</h2>
+          <span className="card__eyebrow">Provocarea focus</span>
+          <h2>{nextChallenge ? nextChallenge.title : "Ai terminat toate provocarile deblocate"}</h2>
           <p>
             {nextChallenge
-              ? `${nextChallenge.target} | Recompensă: ${nextChallenge.xp} XP`
-              : "Repetă mâine exercițiile preferate ca să-ți păstrezi seria activă."}
+              ? `${nextChallenge.target} | Recompensa: ${nextChallenge.xp} XP`
+              : "Misiunea de maine se pregateste... Revino pentru progres nou."}
           </p>
           <button className="button button--secondary" onClick={() => navigate("/challenges")}>
-            Deschide provocările
+            Deschide provocarile
           </button>
         </div>
 
         <div className="card">
-          <span className="card__eyebrow">Modulul următor</span>
+          <span className="card__eyebrow">Modulul urmator</span>
           <h2>{nextTask.title}</h2>
           <p>{nextTask.description}</p>
           <div className="card-tag-row">
@@ -116,9 +139,14 @@ export default function Home() {
             <small>{levelInfo.title}</small>
           </div>
           <div className="metric-card">
-            <span>Loc săptămânal</span>
+            <span>Loc zilnic</span>
+            <strong>#{currentDailyRank?.rank ?? "-"}</strong>
+            <small>Sprintul de azi</small>
+          </div>
+          <div className="metric-card">
+            <span>Loc saptamanal</span>
             <strong>#{currentWeeklyRank?.rank ?? "-"}</strong>
-            <small>Competiție prietenoasă</small>
+            <small>Competitie prietenoasa</small>
           </div>
           <div className="metric-card">
             <span>Insigne</span>
@@ -130,9 +158,7 @@ export default function Home() {
         <div className="card card--compact">
           <div className="truth-row">
             <Icon name="check" className="truth-row__icon" />
-            <p>
-              Progresul se câștigă doar când modulele și provocările sunt marcate după antrenament real.
-            </p>
+            <p>{retentionCopy}</p>
           </div>
         </div>
       </div>
