@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { getTodayKey } from "./appData";
-import { useAppState } from "./appState";
-import { supabase } from "./supabaseClient";
-import { BottomNav, Icon, SectionTitle } from "./ui";
+import { BottomNav, Icon, SectionTitle } from "../components/ui";
+import { getTodayKey } from "../data/appData";
+import { supabase } from "../lib/supabaseClient";
+import { useAppState } from "../state/appState";
 
 type AdminSection = "dashboard" | "content" | "schedule" | "rankings" | "users" | "settings";
 type ModuleCategory = "Mental" | "Fizic" | "Tehnic";

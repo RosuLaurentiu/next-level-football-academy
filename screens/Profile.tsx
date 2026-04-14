@@ -1,7 +1,7 @@
 import { Navigate, useNavigate } from "react-router-dom";
-import { formatLongDate } from "./appData";
-import { useAppState } from "./appState";
-import { AvatarBadge, BadgePill, BottomNav, Icon, ProgressBar } from "./ui";
+import { AvatarBadge, BadgePill, BottomNav, Icon, ProgressBar } from "../components/ui";
+import { formatLongDate } from "../data/appData";
+import { useAppState } from "../state/appState";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export default function Profile() {
     <div className="screen">
       <section className="hero-card hero-card--profile">
         <AvatarBadge avatarId={player.avatarId} size="large" />
-        <span className="hero-card__eyebrow">Ecranul profilului</span>
+        <span className="hero-card__eyebrow">ACADEMY PROFILE</span>
         <h1>{player.username}</h1>
         <p>
           Nivel {levelInfo.level} | {levelInfo.title}
@@ -43,9 +43,14 @@ export default function Profile() {
             <small>Totul câștigat prin antrenament</small>
           </div>
           <div className="metric-card">
-            <span>Zile consecutive</span>
+            <span>Serie</span>
             <strong>{streakDays}</strong>
             <small>Rămâi constant</small>
+          </div>
+          <div className="metric-card">
+            <span>Sesiuni</span>
+            <strong>{completedSessions}</strong>
+            <small>Antrenamente complete</small>
           </div>
           <div className="metric-card">
             <span>Provocări</span>
@@ -55,15 +60,15 @@ export default function Profile() {
         </div>
 
         <div className="card">
-          <span className="card__eyebrow">Rezumatul jucătorului</span>
+          <span className="card__eyebrow">Fișa jucătorului</span>
           <div className="profile-summary">
             <div>
               <strong>Început</strong>
               <p>{formatLongDate(player.createdAt)}</p>
             </div>
             <div>
-              <strong>Sesiuni complete</strong>
-              <p>{completedSessions}</p>
+              <strong>Nivel</strong>
+              <p>{levelInfo.title}</p>
             </div>
             <div>
               <strong>Avatar</strong>
@@ -81,7 +86,7 @@ export default function Profile() {
               ))}
             </div>
           ) : (
-            <p className="empty-copy">Termină provocări și obiective de constanță ca să deblochezi insigne speciale.</p>
+            <p className="empty-copy">Termină provocări și serii de antrenament pentru a debloca insigne speciale.</p>
           )}
         </div>
 
@@ -96,14 +101,14 @@ export default function Profile() {
               ))}
             </div>
           ) : (
-            <p className="empty-copy">Încă nu ai terminat nicio provocare. Intră în zona provocărilor și câștigă prima ta insignă.</p>
+            <p className="empty-copy">Încă nu ai terminat nicio provocare. Intră în zonă și câștigă prima insignă.</p>
           )}
         </div>
 
         {isAdmin && (
           <button className="button button--secondary" onClick={() => navigate("/coach")}>
             <Icon name="coach" className="button__icon" />
-            Deschide panoul antrenorului
+            Deschide panoul admin
           </button>
         )}
 

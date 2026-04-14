@@ -17,13 +17,9 @@ import {
   getQuoteOfTheDay,
   getTodayKey,
   getTrainingPlanForDate,
-} from "./appData";
+} from "../data/appData";
 import { AppStateContext } from "./appStateContext";
-import type {
-  Challenge,
-  PlayerProfile,
-  StoredAppState,
-} from "./types";
+import type { PlayerProfile, StoredAppState } from "../data/types";
 
 const STORAGE_KEY = "next-level-football-academy-state";
 const USER_KEY = "next-level-football-academy-user";
@@ -134,7 +130,6 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       ...currentStore,
       users: [...currentStore.users, { username: cleanUsername, password, avatarId }],
       profiles: { ...currentStore.profiles, [cleanUsername]: profile },
-      activeUsers: currentStore.activeUsers + 1,
     }));
     setCurrentUsername(cleanUsername);
 
@@ -326,63 +321,10 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  const addCoachQuote = async (quote: string) => {
-    const cleanQuote = quote.trim();
-    if (!cleanQuote) {
-      return { ok: false, message: "Scrie mai întâi un mesaj motivațional." };
-    }
-
-    setStore((currentStore) => ({
-      ...currentStore,
-      quotes: [cleanQuote, ...currentStore.quotes],
-    }));
-
-    return { ok: true, message: "Mesajul motivațional a fost adăugat în rotația zilnică." };
-  };
-
-  const addCoachChallenge = async (title: string, description: string, focus: string) => {
-    const cleanTitle = title.trim();
-    const cleanDescription = description.trim();
-    const cleanFocus = focus.trim();
-
-    if (!cleanTitle || !cleanDescription || !cleanFocus) {
-      return { ok: false, message: "Adaugă un titlu, o idee de provocare și o țintă înainte să publici." };
-    }
-
-    const stamp = Date.now();
-    const challenge: Challenge = {
-      id: `coach-${stamp}`,
-      title: cleanTitle,
-      description: cleanDescription,
-      target: cleanFocus,
-      duration: "5-20 min",
-      xp: 130,
-      levelRequired: 2,
-      difficulty: "Alegerea antrenorului",
-      coachNote: "Provocare din panoul antrenorului. Oferă progres doar după ce jucătorul termină sincer întreaga misiune.",
-      rewardText: "Insigna Alegerea antrenorului a fost deblocată.",
-      badge: {
-        id: `coach-badge-${stamp}`,
-        label: "Alegerea antrenorului",
-        description: `${cleanTitle} a fost terminată cu multă determinare.`,
-        rarity: "Legendară",
-        accent: "gold",
-      },
-    };
-
-    setStore((currentStore) => ({
-      ...currentStore,
-      customChallenges: [challenge, ...currentStore.customChallenges],
-    }));
-
-    return { ok: true, message: "Noua provocare a antrenorului a fost publicată în academie." };
-  };
-
   const refreshLeaderboard = async () => {
     setStore((currentStore) => ({
       ...currentStore,
       leaderboardSeed: currentStore.leaderboardSeed + 1,
-      activeUsers: 150 + ((currentStore.leaderboardSeed + 1) * 13) % 45,
     }));
 
     return { ok: true, message: "Clasamentele au fost actualizate." };
@@ -416,14 +358,11 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       monthlyLeaderboard: monthlyRankings?.topTen ?? [],
       currentWeeklyRank: weeklyRankings?.currentUser ?? null,
       currentMonthlyRank: monthlyRankings?.currentUser ?? null,
-      activeUsers: store.activeUsers,
       login,
       signUp,
       logout,
       completeTrainingTask,
       completeChallenge,
-      addCoachQuote,
-      addCoachChallenge,
       regenerateDailyContent,
       refreshLeaderboard,
     }),
@@ -434,7 +373,6 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       levelInfo,
       monthlyRankings,
       player,
-      store.activeUsers,
       streakDays,
       todayCompletedTaskIds,
       todayKey,

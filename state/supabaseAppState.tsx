@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -13,9 +14,10 @@ import {
   getQuoteOfTheDay,
   getTodayKey,
   getTrainingPlanForDate,
-} from "./appData";
+  parseDateKey,
+} from "../data/appData";
 import { AppStateContext } from "./appStateContext";
-import { supabase } from "./supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 import type {
   Badge,
   Challenge,
@@ -26,7 +28,7 @@ import type {
   ChallengeLogEntry,
   TrainingPlan,
   TrainingTask,
-} from "./types";
+} from "../data/types";
 
 interface ProfileRow {
   user_id: string;
@@ -39,6 +41,13 @@ interface ProfileRow {
   unlocked_badges: Badge[] | null;
   consistency_reward_milestones: number[] | null;
   created_at: string;
+}
+
+interface LeaderboardProfileRow {
+  user_id: string;
+  username: string;
+  avatar_id: string;
+  total_xp: number;
 }
 
 interface CoachQuoteRow {
@@ -73,33 +82,6 @@ interface ChallengeCompletionRow {
   title: string;
   xp: number;
   completed_on: string;
-}
-
-interface DailyGeneratedTask {
-  id: string | number;
-  category: "Mental" | "Fizic" | "Tehnic";
-  title: string;
-  duration: string;
-  focus: string;
-  description: string;
-  steps: Array<{
-    title?: string;
-    description?: string;
-    videoUrl?: string;
-  }>;
-  videoUrl?: string;
-  thumbnailUrl?: string;
-  exerciseType?: "Respirație" | "Vizualizare" | "Concentrare" | "Dialog pozitiv" | "Recunoștință";
-  xp: number;
-  accent: "green" | "orange" | "blue" | "gold";
-}
-
-interface DailyGeneratedContent {
-  dateKey: string;
-  mental: DailyGeneratedTask;
-  physical: DailyGeneratedTask;
-  technical: DailyGeneratedTask;
-  challenge: Challenge | null;
 }
 
 function formatSupabaseError(message: string): string {
@@ -278,7 +260,7 @@ function toDailyChallenge(value: unknown): Challenge | null {
 }
 
 function buildLeaderboardSnapshots(
-  profiles: ProfileRow[],
+  profiles: LeaderboardProfileRow[],
   trainingRows: TrainingCompletionRow[],
   challengeRows: ChallengeCompletionRow[],
 ): LeaderboardProfileSnapshot[] {
@@ -317,6 +299,12 @@ function buildLeaderboardSnapshots(
   }));
 }
 
+function getDateKeyDaysAgo(baseDateKey: string, days: number): string {
+  const date = parseDateKey(baseDateKey);
+  date.setDate(date.getDate() - days);
+  return getTodayKey(date);
+}
+
 function mapProfile(
   profile: ProfileRow,
   trainingRows: TrainingCompletionRow[],
@@ -347,14 +335,17 @@ async function fetchRemoteSnapshot(userId: string, todayKey: string) {
     throw new Error("Supabase nu este configurat.");
   }
 
+  const leaderboardWindowStart = getDateKeyDaysAgo(todayKey, 29);
+
   const [
     profileResult,
+    currentTrainingResult,
+    currentChallengeResult,
     quoteResult,
     coachChallengeResult,
-    activeUsersResult,
-    allProfilesResult,
-    allTrainingResult,
-    allChallengeResult,
+    leaderboardProfilesResult,
+    recentTrainingResult,
+    recentChallengeResult,
     dailyContentResult,
   ] = await Promise.all([
     supabase
@@ -363,6 +354,18 @@ async function fetchRemoteSnapshot(userId: string, todayKey: string) {
       .eq("user_id", userId)
       .single<ProfileRow>(),
     supabase
+      .from("training_completions")
+      .select("user_id, date_key, task_id, task_title, xp")
+      .eq("user_id", userId)
+      .order("date_key", { ascending: false })
+      .returns<TrainingCompletionRow[]>(),
+    supabase
+      .from("challenge_completions")
+      .select("user_id, challenge_id, title, xp, completed_on")
+      .eq("user_id", userId)
+      .order("completed_on", { ascending: false })
+      .returns<ChallengeCompletionRow[]>(),
+    supabase
       .from("coach_quotes")
       .select("quote")
       .order("created_at", { ascending: false })
@@ -370,22 +373,22 @@ async function fetchRemoteSnapshot(userId: string, todayKey: string) {
     supabase
       .from("coach_challenges")
       .select("id, title, description, target, duration, xp, level_required, difficulty, coach_note, reward_text, badge")
+      .eq("is_active", true)
       .order("created_at", { ascending: false })
       .returns<CoachChallengeRow[]>(),
     supabase
       .from("profiles")
-      .select("user_id", { count: "exact", head: true }),
-    supabase
-      .from("profiles")
-      .select("user_id, username, email, avatar_id, role, is_suspended, total_xp, unlocked_badges, consistency_reward_milestones, created_at")
-      .returns<ProfileRow[]>(),
+      .select("user_id, username, avatar_id, total_xp")
+      .returns<LeaderboardProfileRow[]>(),
     supabase
       .from("training_completions")
       .select("user_id, date_key, task_id, task_title, xp")
+      .gte("date_key", leaderboardWindowStart)
       .returns<TrainingCompletionRow[]>(),
     supabase
       .from("challenge_completions")
       .select("user_id, challenge_id, title, xp, completed_on")
+      .gte("completed_on", leaderboardWindowStart)
       .returns<ChallengeCompletionRow[]>(),
     supabase.rpc("fetch_daily_training_content", {
       target_date: todayKey,
@@ -401,36 +404,40 @@ async function fetchRemoteSnapshot(userId: string, todayKey: string) {
     throw new Error(quoteResult.error.message);
   }
 
+  if (currentTrainingResult.error) {
+    throw new Error(currentTrainingResult.error.message);
+  }
+
+  if (currentChallengeResult.error) {
+    throw new Error(currentChallengeResult.error.message);
+  }
+
   if (coachChallengeResult.error) {
     throw new Error(coachChallengeResult.error.message);
   }
 
-  if (activeUsersResult.error) {
-    throw new Error(activeUsersResult.error.message);
+  if (leaderboardProfilesResult.error) {
+    throw new Error(leaderboardProfilesResult.error.message);
   }
 
-  if (allProfilesResult.error) {
-    throw new Error(allProfilesResult.error.message);
+  if (recentTrainingResult.error) {
+    throw new Error(recentTrainingResult.error.message);
   }
 
-  if (allTrainingResult.error) {
-    throw new Error(allTrainingResult.error.message);
-  }
-
-  if (allChallengeResult.error) {
-    throw new Error(allChallengeResult.error.message);
+  if (recentChallengeResult.error) {
+    throw new Error(recentChallengeResult.error.message);
   }
 
   if (dailyContentResult.error) {
     throw new Error(dailyContentResult.error.message);
   }
 
-  const allProfiles = allProfilesResult.data ?? [];
-  const allTraining = allTrainingResult.data ?? [];
-  const allChallenges = allChallengeResult.data ?? [];
-  const currentTrainingRows = allTraining.filter((row) => row.user_id === userId);
-  const currentChallengeRows = allChallenges.filter((row) => row.user_id === userId);
-  const snapshots = buildLeaderboardSnapshots(allProfiles, allTraining, allChallenges);
+  const leaderboardProfiles = leaderboardProfilesResult.data ?? [];
+  const currentTrainingRows = currentTrainingResult.data ?? [];
+  const currentChallengeRows = currentChallengeResult.data ?? [];
+  const recentTrainingRows = recentTrainingResult.data ?? [];
+  const recentChallengeRows = recentChallengeResult.data ?? [];
+  const snapshots = buildLeaderboardSnapshots(leaderboardProfiles, recentTrainingRows, recentChallengeRows);
   const dailyRaw = (dailyContentResult.data ?? {}) as Record<string, unknown>;
   const mentalTask = toDailyTask(dailyRaw.mental, "blue");
   const physicalTask = toDailyTask(dailyRaw.physical, "orange");
@@ -453,31 +460,6 @@ async function fetchRemoteSnapshot(userId: string, todayKey: string) {
     dailyLeaderboard: buildLeaderboardFromSnapshots("daily", snapshots, userId, todayKey),
     weeklyLeaderboard: buildLeaderboardFromSnapshots("weekly", snapshots, userId, todayKey),
     monthlyLeaderboard: buildLeaderboardFromSnapshots("monthly", snapshots, userId, todayKey),
-    activeUsers: activeUsersResult.count ?? allProfiles.length,
-  };
-}
-
-function createCoachChallenge(title: string, description: string, focus: string): Challenge {
-  const stamp = Date.now();
-
-  return {
-    id: `coach-${stamp}`,
-    title,
-    description,
-    target: focus,
-    duration: "5-20 min",
-    xp: 130,
-    levelRequired: 2,
-    difficulty: "Alegerea antrenorului",
-    coachNote: "Provocare din panoul antrenorului. Oferă progres doar după ce jucătorul termină sincer întreaga misiune.",
-    rewardText: "Insigna Alegerea antrenorului a fost deblocată.",
-    badge: {
-      id: `coach-badge-${stamp}`,
-      label: "Alegerea antrenorului",
-      description: `${title} a fost terminată cu multă determinare.`,
-      rarity: "Legendară",
-      accent: "gold",
-    },
   };
 }
 
@@ -495,7 +477,7 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
   const [currentDailyRank, setCurrentDailyRank] = useState<RankedPlayer | null>(null);
   const [currentWeeklyRank, setCurrentWeeklyRank] = useState<RankedPlayer | null>(null);
   const [currentMonthlyRank, setCurrentMonthlyRank] = useState<RankedPlayer | null>(null);
-  const [activeUsers, setActiveUsers] = useState(0);
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const todayKey = getTodayKey();
   const fallbackPlan = getTrainingPlanForDate(todayKey);
@@ -513,7 +495,6 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
     setMonthlyLeaderboard([]);
     setCurrentWeeklyRank(null);
     setCurrentMonthlyRank(null);
-    setActiveUsers(0);
   };
 
   const applySnapshot = (snapshot: Awaited<ReturnType<typeof fetchRemoteSnapshot>>) => {
@@ -528,7 +509,6 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
     setMonthlyLeaderboard(snapshot.monthlyLeaderboard.topTen);
     setCurrentWeeklyRank(snapshot.weeklyLeaderboard.currentUser);
     setCurrentMonthlyRank(snapshot.monthlyLeaderboard.currentUser);
-    setActiveUsers(snapshot.activeUsers);
   };
 
   const loadSignedInState = async (userId: string) => {
@@ -605,54 +585,56 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
       return;
     }
 
+    const scheduleReload = () => {
+      if (reloadTimerRef.current) {
+        clearTimeout(reloadTimerRef.current);
+      }
+
+      reloadTimerRef.current = setTimeout(() => {
+        void loadSignedInState(currentUserId);
+      }, 180);
+    };
+
     const client = supabase;
     const channel = client
       .channel(`academy-live-${currentUserId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "profiles" },
-        () => {
-          void loadSignedInState(currentUserId);
-        },
+        scheduleReload,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "training_completions" },
-        () => {
-          void loadSignedInState(currentUserId);
-        },
+        scheduleReload,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "challenge_completions" },
-        () => {
-          void loadSignedInState(currentUserId);
-        },
+        scheduleReload,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "coach_training_modules" },
-        () => {
-          void loadSignedInState(currentUserId);
-        },
+        scheduleReload,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "coach_challenges" },
-        () => {
-          void loadSignedInState(currentUserId);
-        },
+        scheduleReload,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "daily_training_content" },
-        () => {
-          void loadSignedInState(currentUserId);
-        },
+        scheduleReload,
       )
       .subscribe();
 
     return () => {
+      if (reloadTimerRef.current) {
+        clearTimeout(reloadTimerRef.current);
+        reloadTimerRef.current = null;
+      }
       void client.removeChannel(channel);
     };
   }, [currentUserId, todayKey]);
@@ -842,67 +824,6 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
     }
   };
 
-  const addCoachQuote = async (quote: string) => {
-    if (!supabase || !currentUserId) {
-      return { ok: false, message: "Autentifică-te mai întâi ca să folosești panoul antrenorului." };
-    }
-
-    const cleanQuote = quote.trim();
-
-    if (!cleanQuote) {
-      return { ok: false, message: "Scrie mai întâi un mesaj motivațional." };
-    }
-
-    const { error } = await supabase.from("coach_quotes").insert({
-      created_by: currentUserId,
-      quote: cleanQuote,
-    });
-
-    if (error) {
-      return { ok: false, message: formatSupabaseError(error.message) };
-    }
-
-    await loadSignedInState(currentUserId);
-    return { ok: true, message: "Mesajul motivațional a fost adăugat în rotația zilnică." };
-  };
-
-  const addCoachChallenge = async (title: string, description: string, focus: string) => {
-    if (!supabase || !currentUserId) {
-      return { ok: false, message: "Autentifică-te mai întâi ca să folosești panoul antrenorului." };
-    }
-
-    const cleanTitle = title.trim();
-    const cleanDescription = description.trim();
-    const cleanFocus = focus.trim();
-
-    if (!cleanTitle || !cleanDescription || !cleanFocus) {
-      return { ok: false, message: "Adaugă un titlu, o idee de provocare și o țintă înainte să publici." };
-    }
-
-    const challenge = createCoachChallenge(cleanTitle, cleanDescription, cleanFocus);
-    const { error } = await supabase.from("coach_challenges").insert({
-      badge: challenge.badge,
-      coach_note: challenge.coachNote,
-      created_by: currentUserId,
-      description: challenge.description,
-      difficulty: challenge.difficulty,
-      id: challenge.id,
-      level_required: challenge.levelRequired,
-      reward_text: challenge.rewardText,
-      target: challenge.target,
-      title: challenge.title,
-      duration: challenge.duration,
-      xp: challenge.xp,
-    });
-
-    if (error) {
-      return { ok: false, message: formatSupabaseError(error.message) };
-    }
-
-    await loadSignedInState(currentUserId);
-    return { ok: true, message: "Noua provocare a antrenorului a fost publicată în academie." };
-  };
-
   const regenerateDailyContent = async (dateKey?: string) => {
     if (!supabase || !currentUserId) {
       return { ok: false, message: "Autentifică-te mai întâi ca să regenerezi ziua." };
@@ -957,19 +878,15 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
       monthlyLeaderboard,
       currentWeeklyRank,
       currentMonthlyRank,
-      activeUsers,
       login,
       signUp,
       logout,
       completeTrainingTask,
       completeChallenge,
-      addCoachQuote,
-      addCoachChallenge,
       regenerateDailyContent,
       refreshLeaderboard,
     }),
     [
-      activeUsers,
       allChallenges,
       currentMonthlyRank,
       currentDailyRank,

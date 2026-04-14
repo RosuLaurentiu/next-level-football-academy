@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useAppState } from "./appStateContext";
 import { LocalAppStateProvider } from "./localAppState";
 import { SupabaseAppStateProvider } from "./supabaseAppState";
-import { isSupabaseConfigured } from "./supabaseClient";
+import { isSupabaseConfigured } from "../lib/supabaseClient";
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   if (isSupabaseConfigured) {

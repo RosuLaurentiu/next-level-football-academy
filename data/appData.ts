@@ -592,7 +592,6 @@ export function createStarterStore(): StoredAppState {
     quotes: DEFAULT_QUOTES,
     customChallenges: [],
     leaderboardSeed: 0,
-    activeUsers: 164,
   };
 }
 

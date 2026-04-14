@@ -5,7 +5,7 @@ import type {
   PlayerProfile,
   RankedPlayer,
   TrainingPlan,
-} from "./types";
+} from "../data/types";
 
 export interface ActionResult {
   ok: boolean;
@@ -36,7 +36,6 @@ export interface AppStateContextValue {
   currentDailyRank: RankedPlayer | null;
   currentWeeklyRank: RankedPlayer | null;
   currentMonthlyRank: RankedPlayer | null;
-  activeUsers: number;
   login: (identifier: string, password: string) => Promise<ActionResult>;
   signUp: (
     username: string,
@@ -47,12 +46,6 @@ export interface AppStateContextValue {
   logout: () => Promise<void>;
   completeTrainingTask: (taskId: string) => Promise<ActionResult>;
   completeChallenge: (challengeId: string) => Promise<ActionResult>;
-  addCoachQuote: (quote: string) => Promise<ActionResult>;
-  addCoachChallenge: (
-    title: string,
-    description: string,
-    focus: string,
-  ) => Promise<ActionResult>;
   regenerateDailyContent: (dateKey?: string) => Promise<ActionResult>;
   refreshLeaderboard: () => Promise<ActionResult>;
 }

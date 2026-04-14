@@ -99,7 +99,6 @@ export interface StoredAppState {
   quotes: string[];
   customChallenges: Challenge[];
   leaderboardSeed: number;
-  activeUsers: number;
 }
 
 export interface LevelInfo {

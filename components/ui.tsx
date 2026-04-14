@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
-import { getAvatarOption } from "./appData";
-import { useAppState } from "./appState";
-import type { Badge } from "./types";
+import { getAvatarOption } from "../data/appData";
+import { useAppState } from "../state/appState";
+import type { Badge } from "../data/types";
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
@@ -190,7 +190,7 @@ export function BottomNav() {
     { to: "/", label: "Acasă", icon: "home" as const },
     { to: "/training", label: "Antren.", icon: "training" as const },
     { to: "/challenges", label: "Provocări", icon: "challenge" as const },
-    { to: "/leaderboard", label: "Clasament", icon: "leaderboard" as const },
+    { to: "/leaderboard", label: "Top", icon: "leaderboard" as const },
     { to: "/profile", label: "Profil", icon: "profile" as const },
   ];
 

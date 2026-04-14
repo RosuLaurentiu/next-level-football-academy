@@ -1,14 +1,14 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
-import Challenges from "./Challenges";
-import CoachPanel from "./CoachPanel";
-import Home from "./Home";
-import Index from "./Index";
-import Leaderboard from "./Leaderboard";
-import NotFound from "./NotFound";
-import Profile from "./Profile";
-import Training from "./Training";
-import { AppStateProvider } from "./appState";
+import Challenges from "./screens/Challenges";
+import CoachPanel from "./screens/CoachPanel";
+import Home from "./screens/Home";
+import Index from "./screens/Index";
+import Leaderboard from "./screens/Leaderboard";
+import NotFound from "./screens/NotFound";
+import Profile from "./screens/Profile";
+import Training from "./screens/Training";
+import { AppStateProvider } from "./state/appState";
 
 export default function App() {
   return (

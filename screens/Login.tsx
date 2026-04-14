@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AVATARS } from "./appData";
-import { useAppState } from "./appState";
-import { AvatarBadge, Icon } from "./ui";
+import { AvatarBadge, Icon } from "../components/ui";
+import { AVATARS } from "../data/appData";
+import { useAppState } from "../state/appState";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,15 +14,15 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [avatarId, setAvatarId] = useState(AVATARS[0].id);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("Câștigă progres doar după ce termini cu adevărat exercițiile de antrenament.");
+  const [message, setMessage] = useState("Progresul vine doar după antrenament real.");
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    const result = mode === "login"
-      ? await login(identifier, password)
-      : await signUp(username, password, avatarId, email);
+    const result =
+      mode === "login"
+        ? await login(identifier, password)
+        : await signUp(username, password, avatarId, email);
     setSubmitting(false);
-
     setMessage(result.message);
 
     if (result.ok && !result.requiresVerification) {
@@ -34,7 +34,7 @@ export default function Login() {
     setMode("login");
     setIdentifier("sam10");
     setPassword("academy");
-    setMessage("Jucătorul demo este pregătit. Apasă butonul și intră în academie.");
+    setMessage("Contul demo este pregătit.");
   };
 
   return (
@@ -43,13 +43,11 @@ export default function Login() {
         <div className="login-hero__ball">
           <Icon name="ball" className="login-hero__ball-icon" />
         </div>
+
         <div className="login-hero__content">
-          <span className="hero-card__eyebrow">Next Level Football Academy</span>
-          <h1>Antrenează-te acasă. Crește în fiecare zi.</h1>
-          <p>
-            O lume de fotbal plină de energie pentru copii de 8-13 ani, unde îți crești
-            tehnica, disciplina și încrederea.
-          </p>
+          <span className="hero-card__eyebrow">NEXT LEVEL FOOTBALL ACADEMY</span>
+          <h1>Intră în academie.</h1>
+          <p>Mai mult control. Mai multă disciplină. Progres real.</p>
         </div>
       </section>
 
@@ -69,9 +67,10 @@ export default function Login() {
       </div>
 
       <div className="card login-card">
-        <div className="message-banner">
-          <Icon name="flag" className="message-banner__icon" />
-          <p>{message}</p>
+        <div className="login-card__intro">
+          <span className="card__eyebrow">{mode === "login" ? "Bine ai revenit" : "Profil nou"}</span>
+          <h2>{mode === "login" ? "Continuă antrenamentul" : "Pornește aventura"}</h2>
+          <p>{mode === "login" ? "Intră și urcă nivelul." : "Creează-ți profilul de jucător."}</p>
         </div>
 
         <div className="form-grid">
@@ -82,7 +81,7 @@ export default function Login() {
                 className="input"
                 value={identifier}
                 onChange={(event) => setIdentifier(event.target.value)}
-                placeholder={requiresEmailAuth ? "jucator@email.com" : "Numele tău de jucător"}
+                placeholder={requiresEmailAuth ? "jucator@email.com" : "Nume utilizator"}
               />
             </label>
           ) : (
@@ -93,7 +92,7 @@ export default function Login() {
                   className="input"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="Numele tău de jucător"
+                  placeholder="Nume utilizator"
                 />
               </label>
 
@@ -131,6 +130,7 @@ export default function Login() {
                 {AVATARS.map((avatar) => (
                   <button
                     key={avatar.id}
+                    type="button"
                     className={avatarId === avatar.id ? "avatar-option avatar-option--active" : "avatar-option"}
                     onClick={() => setAvatarId(avatar.id)}
                   >
@@ -142,23 +142,17 @@ export default function Login() {
             </div>
           )}
 
-          {usesSupabase && (
-            <p className="empty-copy">
-              Supabase este conectat, așa că autentificarea se face cu email, iar progresul se sincronizează între dispozitive.
-            </p>
-          )}
+          {usesSupabase && <p className="login-note">Progres live sincronizat între dispozitive.</p>}
 
           <button
             className="button button--primary button--large"
             onClick={() => void handleSubmit()}
             disabled={submitting}
           >
-            {submitting
-              ? "Se încarcă..."
-              : mode === "login"
-                ? "Intră în joc"
-                : "Pornește aventura mea"}
+            {submitting ? "Se încarcă..." : mode === "login" ? "Intră în joc" : "Creează cont"}
           </button>
+
+          <p className="login-feedback">{message}</p>
         </div>
       </div>
 
@@ -166,8 +160,8 @@ export default function Login() {
         <div className="card card--compact">
           <div className="demo-row">
             <div>
-              <strong>Încearcă jucătorul demo</strong>
-              <p>Nume utilizator: sam10 | Parolă: academy</p>
+              <strong>Cont demo</strong>
+              <p>sam10 / academy</p>
             </div>
             <button className="button button--secondary" onClick={useDemoPlayer}>
               Folosește demo
