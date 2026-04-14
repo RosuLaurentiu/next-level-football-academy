@@ -24,28 +24,34 @@ export default function CoachPanel() {
 
   const customChallengeCount = allChallenges.filter((challenge) => challenge.difficulty === "Coach Pick").length;
 
-  const handleChallengeSubmit = () => {
+  const handleChallengeSubmit = async () => {
     if (!challengeTitle.trim() || !challengeDescription.trim() || !challengeTarget.trim()) {
       setMessage("Add a title, challenge idea, and target before publishing.");
       return;
     }
 
-    addCoachChallenge(challengeTitle, challengeDescription, challengeTarget);
-    setChallengeTitle("");
-    setChallengeDescription("");
-    setChallengeTarget("");
-    setMessage("New coach challenge published for the academy.");
+    const result = await addCoachChallenge(challengeTitle, challengeDescription, challengeTarget);
+    setMessage(result.message);
+
+    if (result.ok) {
+      setChallengeTitle("");
+      setChallengeDescription("");
+      setChallengeTarget("");
+    }
   };
 
-  const handleQuoteSubmit = () => {
+  const handleQuoteSubmit = async () => {
     if (!quote.trim()) {
       setMessage("Write a motivational quote first.");
       return;
     }
 
-    addCoachQuote(quote);
-    setQuote("");
-    setMessage("New motivational quote added to the daily rotation.");
+    const result = await addCoachQuote(quote);
+    setMessage(result.message);
+
+    if (result.ok) {
+      setQuote("");
+    }
   };
 
   return (
@@ -136,7 +142,13 @@ export default function CoachPanel() {
             title="Refresh Competition"
             subtitle="Use this when you want the weekly and monthly table to feel alive."
           />
-          <button className="button button--dark" onClick={refreshLeaderboard}>
+          <button
+            className="button button--dark"
+            onClick={async () => {
+              const result = await refreshLeaderboard();
+              setMessage(result.message);
+            }}
+          >
             Update Rankings
           </button>
         </div>

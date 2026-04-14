@@ -32,8 +32,8 @@ export default function Training() {
     }
   };
 
-  const completeDrill = (taskId: string) => {
-    const result = completeTrainingTask(taskId);
+  const completeDrill = async (taskId: string) => {
+    const result = await completeTrainingTask(taskId);
     setMessage(result.message);
   };
 
@@ -93,7 +93,7 @@ export default function Training() {
                 </button>
                 <button
                   className="button button--primary"
-                  onClick={() => completeDrill(task.id)}
+                  onClick={() => void completeDrill(task.id)}
                   disabled={completed || !started}
                 >
                   {completed ? "Completed" : "I Finished It"}

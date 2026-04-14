@@ -62,6 +62,7 @@ export interface ChallengeLogEntry {
 }
 
 export interface PlayerProfile {
+  userId?: string;
   username: string;
   avatarId: string;
   totalXp: number;
@@ -98,10 +99,20 @@ export interface LevelInfo {
 
 export interface RankedPlayer {
   rank: number;
+  userId?: string;
   username: string;
   avatarId: string;
   xp: number;
   level: number;
   streak: number;
   isCurrentUser?: boolean;
+}
+
+export interface LeaderboardProfileSnapshot {
+  userId: string;
+  username: string;
+  avatarId: string;
+  totalXp: number;
+  trainingLog: TrainingLogEntry[];
+  challengeLog: ChallengeLogEntry[];
 }

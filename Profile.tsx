@@ -107,8 +107,8 @@ export default function Profile() {
 
         <button
           className="button button--dark"
-          onClick={() => {
-            logout();
+          onClick={async () => {
+            await logout();
             navigate("/");
           }}
         >

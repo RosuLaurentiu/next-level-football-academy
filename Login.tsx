@@ -6,29 +6,33 @@ import { AvatarBadge, Icon } from "./ui";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, signUp } = useAppState();
+  const { login, signUp, requiresEmailAuth, usesSupabase } = useAppState();
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [identifier, setIdentifier] = useState("");
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [avatarId, setAvatarId] = useState(AVATARS[0].id);
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("Earn progress by completing real training drills every day.");
 
-  const handleSubmit = () => {
-    const result =
-      mode === "login"
-        ? login(username, password)
-        : signUp(username, password, avatarId);
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    const result = mode === "login"
+      ? await login(identifier, password)
+      : await signUp(username, password, avatarId, email);
+    setSubmitting(false);
 
     setMessage(result.message);
 
-    if (result.ok) {
+    if (result.ok && !result.requiresVerification) {
       navigate("/");
     }
   };
 
   const useDemoPlayer = () => {
     setMode("login");
-    setUsername("sam10");
+    setIdentifier("sam10");
     setPassword("academy");
     setMessage("Demo player ready. Tap the button to enter the academy.");
   };
@@ -71,15 +75,43 @@ export default function Login() {
         </div>
 
         <div className="form-grid">
-          <label className="label">
-            Username
-            <input
-              className="input"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="Your player name"
-            />
-          </label>
+          {mode === "login" ? (
+            <label className="label">
+              {requiresEmailAuth ? "Email" : "Username"}
+              <input
+                className="input"
+                value={identifier}
+                onChange={(event) => setIdentifier(event.target.value)}
+                placeholder={requiresEmailAuth ? "player@email.com" : "Your player name"}
+              />
+            </label>
+          ) : (
+            <>
+              <label className="label">
+                Username
+                <input
+                  className="input"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder="Your player name"
+                />
+              </label>
+
+              {requiresEmailAuth && (
+                <label className="label">
+                  Email
+                  <input
+                    className="input"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="player@email.com"
+                  />
+                </label>
+              )}
+            </>
+          )}
+
           <label className="label">
             Password
             <input
@@ -88,7 +120,7 @@ export default function Login() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter password"
-              onKeyDown={(event) => event.key === "Enter" && handleSubmit()}
+              onKeyDown={(event) => event.key === "Enter" && void handleSubmit()}
             />
           </label>
 
@@ -110,23 +142,39 @@ export default function Login() {
             </div>
           )}
 
-          <button className="button button--primary button--large" onClick={handleSubmit}>
-            {mode === "login" ? "Enter Training App" : "Start My Academy"}
+          {usesSupabase && (
+            <p className="empty-copy">
+              Supabase is connected, so account login uses email and progress syncs between devices.
+            </p>
+          )}
+
+          <button
+            className="button button--primary button--large"
+            onClick={() => void handleSubmit()}
+            disabled={submitting}
+          >
+            {submitting
+              ? "Saving..."
+              : mode === "login"
+                ? "Enter Training App"
+                : "Start My Academy"}
           </button>
         </div>
       </div>
 
-      <div className="card card--compact">
-        <div className="demo-row">
-          <div>
-            <strong>Try the demo player</strong>
-            <p>Username: sam10 | Password: academy</p>
+      {!usesSupabase && (
+        <div className="card card--compact">
+          <div className="demo-row">
+            <div>
+              <strong>Try the demo player</strong>
+              <p>Username: sam10 | Password: academy</p>
+            </div>
+            <button className="button button--secondary" onClick={useDemoPlayer}>
+              Use Demo
+            </button>
           </div>
-          <button className="button button--secondary" onClick={useDemoPlayer}>
-            Use Demo
-          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

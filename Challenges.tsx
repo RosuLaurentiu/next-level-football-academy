@@ -19,8 +19,8 @@ export default function Challenges() {
     }
   };
 
-  const finishChallenge = (challengeId: string) => {
-    const result = completeChallenge(challengeId);
+  const finishChallenge = async (challengeId: string) => {
+    const result = await completeChallenge(challengeId);
     setMessage(result.message);
   };
 
@@ -85,7 +85,7 @@ export default function Challenges() {
                 </button>
                 <button
                   className="button button--primary"
-                  onClick={() => finishChallenge(challenge.id)}
+                  onClick={() => void finishChallenge(challenge.id)}
                   disabled={completed || !unlocked || !started}
                 >
                   {completed ? "Badge Earned" : "I Completed It"}

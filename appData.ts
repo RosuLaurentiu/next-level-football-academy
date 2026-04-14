@@ -2,6 +2,7 @@ import type {
   AvatarOption,
   Badge,
   Challenge,
+  LeaderboardProfileSnapshot,
   LevelInfo,
   PlayerProfile,
   RankedPlayer,
@@ -655,5 +656,54 @@ export function buildLeaderboard(
   return {
     topTen: allPlayers.slice(0, 10),
     currentUser,
+  };
+}
+
+export function buildLeaderboardFromSnapshots(
+  mode: "weekly" | "monthly",
+  snapshots: LeaderboardProfileSnapshot[],
+  currentUserId: string,
+  todayKey: string,
+): { topTen: RankedPlayer[]; currentUser: RankedPlayer | null } {
+  const allPlayers = snapshots
+    .map((snapshot) => {
+      const xp = mode === "weekly"
+        ? calculateRecentXp(
+            {
+              userId: snapshot.userId,
+              username: snapshot.username,
+              avatarId: snapshot.avatarId,
+              totalXp: snapshot.totalXp,
+              completedChallengeIds: [],
+              trainingLog: snapshot.trainingLog,
+              challengeLog: snapshot.challengeLog,
+              unlockedBadges: [],
+              consistencyRewardMilestones: [],
+              createdAt: todayKey,
+            },
+            7,
+            todayKey,
+          )
+        : snapshot.totalXp;
+
+      return {
+        userId: snapshot.userId,
+        username: snapshot.username,
+        avatarId: snapshot.avatarId,
+        xp,
+        level: getLevelInfo(snapshot.totalXp).level,
+        streak: calculateStreak(snapshot.trainingLog, todayKey),
+        isCurrentUser: snapshot.userId === currentUserId,
+      };
+    })
+    .sort((first, second) => second.xp - first.xp)
+    .map((player, index) => ({
+      ...player,
+      rank: index + 1,
+    }));
+
+  return {
+    topTen: allPlayers.slice(0, 10),
+    currentUser: allPlayers.find((player) => player.userId === currentUserId) ?? null,
   };
 }
