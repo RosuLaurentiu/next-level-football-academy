@@ -5,10 +5,10 @@ export default function NotFound() {
     <div className="screen screen--centered">
       <div className="card card--compact not-found-card">
         <span className="hero-card__eyebrow">404</span>
-        <h1>That page is not part of the academy.</h1>
-        <p>Use the button below to head back to the football app home screen.</p>
+        <h1>Această pagină nu face parte din academie.</h1>
+        <p>Folosește butonul de mai jos ca să revii la ecranul principal al aplicației.</p>
         <Link className="button button--primary" to="/">
-          Return Home
+          Înapoi acasă
         </Link>
       </div>
     </div>

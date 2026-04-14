@@ -1,0 +1,895 @@
+create schema if not exists private;
+
+alter table public.profiles
+  add column if not exists email text,
+  add column if not exists role text not null default 'player' check (role in ('player', 'admin')),
+  add column if not exists is_suspended boolean not null default false;
+
+create index if not exists profiles_role_idx on public.profiles (role);
+create index if not exists profiles_suspended_idx on public.profiles (is_suspended);
+
+create or replace function private.is_admin(user_id_input uuid default auth.uid())
+returns boolean
+language sql
+security definer
+set search_path = ''
+stable
+as $$
+  select exists (
+    select 1
+    from public.profiles p
+    where p.user_id = user_id_input
+      and p.role = 'admin'
+      and p.is_suspended = false
+  );
+$$;
+
+create or replace function private.is_active_player(user_id_input uuid default auth.uid())
+returns boolean
+language sql
+security definer
+set search_path = ''
+stable
+as $$
+  select exists (
+    select 1
+    from public.profiles p
+    where p.user_id = user_id_input
+      and p.is_suspended = false
+  );
+$$;
+
+create or replace function public.prevent_profile_privilege_escalation()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  caller_id uuid := auth.uid();
+begin
+  if caller_id is null then
+    return new;
+  end if;
+
+  if (select private.is_admin(caller_id)) then
+    return new;
+  end if;
+
+  if old.user_id <> caller_id then
+    raise exception 'Nu poti actualiza profilul altui jucator.';
+  end if;
+
+  if new.role <> old.role then
+    raise exception 'Rolul poate fi schimbat doar de admin.';
+  end if;
+
+  if new.is_suspended <> old.is_suspended then
+    raise exception 'Suspendarea poate fi schimbata doar de admin.';
+  end if;
+
+  if coalesce(new.email, '') <> coalesce(old.email, '') then
+    raise exception 'Emailul este gestionat doar de sistem.';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_prevent_privilege_escalation on public.profiles;
+create trigger profiles_prevent_privilege_escalation
+before update on public.profiles
+for each row
+execute function public.prevent_profile_privilege_escalation();
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (
+    user_id,
+    username,
+    avatar_id,
+    email
+  )
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'username', split_part(new.email, '@', 1)),
+    coalesce(new.raw_user_meta_data ->> 'avatar_id', 'rocket'),
+    new.email
+  )
+  on conflict (user_id) do update
+  set
+    username = excluded.username,
+    avatar_id = excluded.avatar_id,
+    email = excluded.email,
+    updated_at = timezone('utc', now());
+
+  return new;
+end;
+$$;
+
+alter table public.coach_training_modules
+  add column if not exists difficulty_level text not null default 'Mediu',
+  add column if not exists youtube_url text,
+  add column if not exists thumbnail_url text;
+
+alter table public.coach_challenges
+  add column if not exists youtube_url text,
+  add column if not exists thumbnail_url text;
+
+create table if not exists public.coach_app_settings (
+  id integer primary key default 1 check (id = 1),
+  challenge_frequency_days integer not null default 1 check (challenge_frequency_days >= 1),
+  daily_reset_time time not null default '00:00',
+  auto_generator_enabled boolean not null default true,
+  xp_mental integer not null default 25 check (xp_mental >= 0),
+  xp_physical integer not null default 35 check (xp_physical >= 0),
+  xp_technical integer not null default 45 check (xp_technical >= 0),
+  xp_challenge integer not null default 120 check (xp_challenge >= 0),
+  app_announcement text not null default '',
+  maintenance_mode boolean not null default false,
+  updated_by uuid references public.profiles (user_id) on delete set null,
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+insert into public.coach_app_settings (id)
+values (1)
+on conflict (id) do nothing;
+
+create table if not exists public.coach_manual_daily_schedule (
+  date_key date primary key,
+  mental_module_id bigint not null references public.coach_training_modules (id),
+  physical_module_id bigint not null references public.coach_training_modules (id),
+  technical_module_id bigint not null references public.coach_training_modules (id),
+  challenge_id text references public.coach_challenges (id),
+  created_by uuid references public.profiles (user_id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+drop trigger if exists coach_manual_daily_schedule_set_updated_at on public.coach_manual_daily_schedule;
+create trigger coach_manual_daily_schedule_set_updated_at
+before update on public.coach_manual_daily_schedule
+for each row
+execute function public.set_updated_at();
+
+create table if not exists public.admin_bonus_xp_logs (
+  id bigint generated by default as identity primary key,
+  player_user_id uuid not null references public.profiles (user_id) on delete cascade,
+  xp integer not null check (xp > 0),
+  reason text not null,
+  created_by uuid references public.profiles (user_id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists admin_bonus_xp_logs_player_idx
+  on public.admin_bonus_xp_logs (player_user_id, created_at desc);
+
+create or replace function public.complete_training_task(
+  task_id_input text,
+  task_title_input text,
+  xp_input integer,
+  training_date_input date,
+  session_task_ids_input text[]
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  session_task_count integer;
+begin
+  if current_user_id is null then
+    raise exception 'You must be logged in to save training progress.';
+  end if;
+
+  if not (select private.is_active_player(current_user_id)) then
+    raise exception 'Contul tau este suspendat.';
+  end if;
+
+  insert into public.training_completions (user_id, date_key, task_id, task_title, xp)
+  values (current_user_id, training_date_input, task_id_input, task_title_input, xp_input)
+  on conflict (user_id, date_key, task_id) do nothing;
+
+  if not found then
+    raise exception 'That drill is already completed for today.';
+  end if;
+
+  update public.profiles
+  set total_xp = total_xp + xp_input
+  where user_id = current_user_id;
+
+  if not exists (
+    select 1
+    from public.training_completions
+    where user_id = current_user_id
+      and date_key = training_date_input
+      and task_id = 'session-bonus'
+  ) then
+    select count(distinct task_id)
+    into session_task_count
+    from public.training_completions
+    where user_id = current_user_id
+      and date_key = training_date_input
+      and task_id = any(session_task_ids_input);
+
+    if session_task_count = coalesce(array_length(session_task_ids_input, 1), 0) and session_task_count > 0 then
+      insert into public.training_completions (user_id, date_key, task_id, task_title, xp)
+      values (current_user_id, training_date_input, 'session-bonus', 'Full Session Bonus', 60);
+
+      update public.profiles
+      set total_xp = total_xp + 60
+      where user_id = current_user_id;
+    end if;
+  end if;
+
+  perform public.sync_profile_rewards(current_user_id, training_date_input);
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.complete_challenge(
+  challenge_id_input text,
+  title_input text,
+  xp_input integer,
+  badge_input jsonb,
+  completed_on_input date,
+  level_required_input integer
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  current_total_xp integer;
+  current_badges jsonb;
+begin
+  if current_user_id is null then
+    raise exception 'You must be logged in to save challenge progress.';
+  end if;
+
+  if not (select private.is_active_player(current_user_id)) then
+    raise exception 'Contul tau este suspendat.';
+  end if;
+
+  select total_xp, unlocked_badges
+  into current_total_xp, current_badges
+  from public.profiles
+  where user_id = current_user_id
+  for update;
+
+  if public.player_level(current_total_xp) < level_required_input then
+    raise exception 'Reach level % to unlock this challenge.', level_required_input;
+  end if;
+
+  insert into public.challenge_completions (user_id, challenge_id, title, xp, badge, completed_on)
+  values (current_user_id, challenge_id_input, title_input, xp_input, badge_input, completed_on_input)
+  on conflict (user_id, challenge_id) do nothing;
+
+  if not found then
+    raise exception 'That challenge badge is already in your collection.';
+  end if;
+
+  update public.profiles
+  set
+    total_xp = total_xp + xp_input,
+    unlocked_badges = public.append_badge(current_badges, badge_input)
+  where user_id = current_user_id;
+
+  perform public.sync_profile_rewards(current_user_id, completed_on_input);
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.generate_daily_training_content(
+  target_date date default current_date,
+  force_regenerate boolean default false
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  existing_row public.daily_training_content%rowtype;
+  manual_row public.coach_manual_daily_schedule%rowtype;
+  settings_row public.coach_app_settings%rowtype;
+  mental_candidates text[];
+  physical_candidates text[];
+  technical_candidates text[];
+  challenge_candidates text[];
+  mental_pick text;
+  physical_pick text;
+  technical_pick text;
+  challenge_pick text;
+  challenge_anchor date := '2026-01-01';
+begin
+  if not force_regenerate then
+    select *
+    into existing_row
+    from public.daily_training_content
+    where date_key = target_date;
+
+    if found then
+      return jsonb_build_object('ok', true, 'dateKey', target_date::text, 'alreadyGenerated', true);
+    end if;
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended('daily_training_content_' || target_date::text, 0));
+
+  if not force_regenerate then
+    select *
+    into existing_row
+    from public.daily_training_content
+    where date_key = target_date;
+
+    if found then
+      return jsonb_build_object('ok', true, 'dateKey', target_date::text, 'alreadyGenerated', true);
+    end if;
+  end if;
+
+  select * into settings_row from public.coach_app_settings where id = 1;
+  select * into manual_row from public.coach_manual_daily_schedule where date_key = target_date;
+
+  if found then
+    mental_pick := manual_row.mental_module_id::text;
+    physical_pick := manual_row.physical_module_id::text;
+    technical_pick := manual_row.technical_module_id::text;
+    challenge_pick := manual_row.challenge_id;
+  else
+    if settings_row.auto_generator_enabled = false then
+      raise exception 'Generatorul automat este dezactivat. Adauga programare manuala.';
+    end if;
+
+    select array_agg(id::text order by id)
+    into mental_candidates
+    from public.coach_training_modules
+    where category = 'Mental'
+      and is_active;
+
+    select array_agg(id::text order by id)
+    into physical_candidates
+    from public.coach_training_modules
+    where category = 'Fizic'
+      and is_active;
+
+    select array_agg(id::text order by id)
+    into technical_candidates
+    from public.coach_training_modules
+    where category = 'Tehnic'
+      and is_active;
+
+    if coalesce(array_length(mental_candidates, 1), 0) = 0 then
+      raise exception 'Nu exista module active in categoria Mental.';
+    end if;
+
+    if coalesce(array_length(physical_candidates, 1), 0) = 0 then
+      raise exception 'Nu exista module active in categoria Fizic.';
+    end if;
+
+    if coalesce(array_length(technical_candidates, 1), 0) = 0 then
+      raise exception 'Nu exista module active in categoria Tehnic.';
+    end if;
+
+    mental_pick := public.pick_next_category_item('mental', mental_candidates);
+    physical_pick := public.pick_next_category_item('physical', physical_candidates);
+    technical_pick := public.pick_next_category_item('technical', technical_candidates);
+
+    if ((target_date - challenge_anchor) % settings_row.challenge_frequency_days = 0) then
+      select array_agg(id::text order by id)
+      into challenge_candidates
+      from public.coach_challenges
+      where is_active
+        and target_date >= schedule_start_date
+        and ((target_date - schedule_start_date) % schedule_every_days = 0);
+
+      if coalesce(array_length(challenge_candidates, 1), 0) > 0 then
+        challenge_pick := public.pick_next_category_item('challenge', challenge_candidates);
+      else
+        challenge_pick := null;
+      end if;
+    else
+      challenge_pick := null;
+    end if;
+  end if;
+
+  insert into public.daily_training_content (
+    date_key,
+    mental_module_id,
+    physical_module_id,
+    technical_module_id,
+    challenge_id,
+    generated_at,
+    generated_by
+  )
+  values (
+    target_date,
+    mental_pick::bigint,
+    physical_pick::bigint,
+    technical_pick::bigint,
+    challenge_pick,
+    timezone('utc', now()),
+    auth.uid()
+  )
+  on conflict (date_key) do update
+  set
+    mental_module_id = excluded.mental_module_id,
+    physical_module_id = excluded.physical_module_id,
+    technical_module_id = excluded.technical_module_id,
+    challenge_id = excluded.challenge_id,
+    generated_at = excluded.generated_at,
+    generated_by = excluded.generated_by;
+
+  return jsonb_build_object('ok', true, 'dateKey', target_date::text, 'alreadyGenerated', false);
+end;
+$$;
+
+create or replace function public.admin_dashboard_snapshot()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  today_date date := current_date;
+  total_users_count integer;
+  active_users_count integer;
+  completed_trainings_count integer;
+  pending_issues_count integer;
+  top_players_json jsonb;
+begin
+  if not (select private.is_admin(auth.uid())) then
+    raise exception 'Acces interzis. Doar admin.';
+  end if;
+
+  select count(*) into total_users_count from public.profiles;
+
+  select count(distinct user_id)
+  into active_users_count
+  from public.training_completions
+  where date_key = today_date;
+
+  select count(*)
+  into completed_trainings_count
+  from public.training_completions
+  where date_key = today_date
+    and task_id = 'session-bonus';
+
+  select count(*)
+  into pending_issues_count
+  from public.profiles
+  where is_suspended = true;
+
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'username', username,
+        'avatarId', avatar_id,
+        'xp', week_xp
+      )
+      order by week_xp desc
+    ),
+    '[]'::jsonb
+  )
+  into top_players_json
+  from (
+    select
+      p.username,
+      p.avatar_id,
+      coalesce(sum(t.xp), 0) as week_xp
+    from public.profiles p
+    left join public.training_completions t
+      on t.user_id = p.user_id
+      and t.date_key >= today_date - 6
+    group by p.user_id, p.username, p.avatar_id
+    order by week_xp desc
+    limit 5
+  ) ranked;
+
+  return jsonb_build_object(
+    'totalUsers', total_users_count,
+    'activeUsersToday', active_users_count,
+    'completedTrainingsToday', completed_trainings_count,
+    'pendingIssues', pending_issues_count,
+    'topPlayersWeek', top_players_json
+  );
+end;
+$$;
+
+create or replace function public.admin_list_users(search_text text default null)
+returns table (
+  user_id uuid,
+  username text,
+  avatar_id text,
+  email text,
+  role text,
+  is_suspended boolean,
+  total_xp integer,
+  streak_days integer,
+  completed_challenges integer
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select
+    p.user_id,
+    p.username,
+    p.avatar_id,
+    p.email,
+    p.role,
+    p.is_suspended,
+    p.total_xp,
+    public.current_training_streak(p.user_id, current_date) as streak_days,
+    (
+      select count(*)
+      from public.challenge_completions cc
+      where cc.user_id = p.user_id
+    ) as completed_challenges
+  from public.profiles p
+  where (select private.is_admin(auth.uid()))
+    and (
+      coalesce(search_text, '') = ''
+      or p.username ilike '%' || search_text || '%'
+      or coalesce(p.email, '') ilike '%' || search_text || '%'
+    )
+  order by p.total_xp desc, p.username asc;
+$$;
+
+create or replace function public.admin_set_user_role(target_user_id uuid, next_role text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not (select private.is_admin(auth.uid())) then
+    raise exception 'Acces interzis. Doar admin.';
+  end if;
+
+  if next_role not in ('player', 'admin') then
+    raise exception 'Rol invalid.';
+  end if;
+
+  update public.profiles
+  set role = next_role
+  where user_id = target_user_id;
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.admin_set_user_suspension(target_user_id uuid, suspended boolean)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not (select private.is_admin(auth.uid())) then
+    raise exception 'Acces interzis. Doar admin.';
+  end if;
+
+  update public.profiles
+  set is_suspended = suspended
+  where user_id = target_user_id;
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.admin_award_bonus_xp(
+  target_user_id uuid,
+  xp_amount integer,
+  reason_text text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  stamp text := floor(extract(epoch from clock_timestamp()) * 1000)::text;
+begin
+  if not (select private.is_admin(auth.uid())) then
+    raise exception 'Acces interzis. Doar admin.';
+  end if;
+
+  if xp_amount <= 0 then
+    raise exception 'XP trebuie sa fie mai mare decat 0.';
+  end if;
+
+  insert into public.training_completions (user_id, date_key, task_id, task_title, xp)
+  values (
+    target_user_id,
+    current_date,
+    'admin-bonus-' || stamp,
+    'Bonus XP manual',
+    xp_amount
+  );
+
+  update public.profiles
+  set total_xp = total_xp + xp_amount
+  where user_id = target_user_id;
+
+  insert into public.admin_bonus_xp_logs (player_user_id, xp, reason, created_by)
+  values (target_user_id, xp_amount, reason_text, auth.uid());
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.admin_remove_fraudulent_scores(
+  target_user_id uuid,
+  from_date date default current_date - 6,
+  reason_text text default 'Scor suspect'
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  removed_xp integer := 0;
+begin
+  if not (select private.is_admin(auth.uid())) then
+    raise exception 'Acces interzis. Doar admin.';
+  end if;
+
+  select coalesce(sum(xp), 0)
+  into removed_xp
+  from public.training_completions
+  where user_id = target_user_id
+    and date_key >= from_date;
+
+  delete from public.training_completions
+  where user_id = target_user_id
+    and date_key >= from_date;
+
+  update public.profiles
+  set total_xp = greatest(0, total_xp - removed_xp)
+  where user_id = target_user_id;
+
+  insert into public.admin_bonus_xp_logs (player_user_id, xp, reason, created_by)
+  values (target_user_id, 0, 'Scoruri eliminate: ' || reason_text, auth.uid());
+
+  return jsonb_build_object('ok', true, 'removedXp', removed_xp);
+end;
+$$;
+
+create or replace function public.admin_reset_weekly_ranking()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not (select private.is_admin(auth.uid())) then
+    raise exception 'Acces interzis. Doar admin.';
+  end if;
+
+  delete from public.training_completions
+  where date_key >= current_date - 6;
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.admin_set_manual_daily_schedule(
+  target_date date,
+  mental_id bigint,
+  physical_id bigint,
+  technical_id bigint,
+  challenge_text_id text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not (select private.is_admin(auth.uid())) then
+    raise exception 'Acces interzis. Doar admin.';
+  end if;
+
+  insert into public.coach_manual_daily_schedule (
+    date_key,
+    mental_module_id,
+    physical_module_id,
+    technical_module_id,
+    challenge_id,
+    created_by,
+    updated_at
+  )
+  values (
+    target_date,
+    mental_id,
+    physical_id,
+    technical_id,
+    challenge_text_id,
+    auth.uid(),
+    timezone('utc', now())
+  )
+  on conflict (date_key) do update
+  set
+    mental_module_id = excluded.mental_module_id,
+    physical_module_id = excluded.physical_module_id,
+    technical_module_id = excluded.technical_module_id,
+    challenge_id = excluded.challenge_id,
+    created_by = excluded.created_by,
+    updated_at = excluded.updated_at;
+
+  perform public.generate_daily_training_content(target_date, true);
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.admin_update_settings(
+  challenge_frequency integer,
+  reset_clock time,
+  auto_generator boolean,
+  xp_mental_input integer,
+  xp_physical_input integer,
+  xp_technical_input integer,
+  xp_challenge_input integer,
+  announcement_text text,
+  maintenance_enabled boolean
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not (select private.is_admin(auth.uid())) then
+    raise exception 'Acces interzis. Doar admin.';
+  end if;
+
+  update public.coach_app_settings
+  set
+    challenge_frequency_days = challenge_frequency,
+    daily_reset_time = reset_clock,
+    auto_generator_enabled = auto_generator,
+    xp_mental = xp_mental_input,
+    xp_physical = xp_physical_input,
+    xp_technical = xp_technical_input,
+    xp_challenge = xp_challenge_input,
+    app_announcement = coalesce(announcement_text, ''),
+    maintenance_mode = maintenance_enabled,
+    updated_by = auth.uid(),
+    updated_at = timezone('utc', now())
+  where id = 1;
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+alter table public.coach_app_settings enable row level security;
+alter table public.coach_manual_daily_schedule enable row level security;
+alter table public.admin_bonus_xp_logs enable row level security;
+
+drop policy if exists "authenticated can add coach quotes" on public.coach_quotes;
+drop policy if exists "authenticated can add coach challenges" on public.coach_challenges;
+drop policy if exists "authenticated can add coach training modules" on public.coach_training_modules;
+
+drop policy if exists "admins can add coach quotes" on public.coach_quotes;
+create policy "admins can add coach quotes"
+on public.coach_quotes
+for insert
+to authenticated
+with check ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins can edit coach quotes" on public.coach_quotes;
+create policy "admins can edit coach quotes"
+on public.coach_quotes
+for update
+to authenticated
+using ((select private.is_admin(auth.uid())))
+with check ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins can delete coach quotes" on public.coach_quotes;
+create policy "admins can delete coach quotes"
+on public.coach_quotes
+for delete
+to authenticated
+using ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins can add coach challenges" on public.coach_challenges;
+create policy "admins can add coach challenges"
+on public.coach_challenges
+for insert
+to authenticated
+with check ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins can edit coach challenges" on public.coach_challenges;
+create policy "admins can edit coach challenges"
+on public.coach_challenges
+for update
+to authenticated
+using ((select private.is_admin(auth.uid())))
+with check ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins can delete coach challenges" on public.coach_challenges;
+create policy "admins can delete coach challenges"
+on public.coach_challenges
+for delete
+to authenticated
+using ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins can add coach training modules" on public.coach_training_modules;
+create policy "admins can add coach training modules"
+on public.coach_training_modules
+for insert
+to authenticated
+with check ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins can edit coach training modules" on public.coach_training_modules;
+create policy "admins can edit coach training modules"
+on public.coach_training_modules
+for update
+to authenticated
+using ((select private.is_admin(auth.uid())))
+with check ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins can delete coach training modules" on public.coach_training_modules;
+create policy "admins can delete coach training modules"
+on public.coach_training_modules
+for delete
+to authenticated
+using ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins read app settings" on public.coach_app_settings;
+create policy "admins read app settings"
+on public.coach_app_settings
+for select
+to authenticated
+using ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins update app settings" on public.coach_app_settings;
+create policy "admins update app settings"
+on public.coach_app_settings
+for update
+to authenticated
+using ((select private.is_admin(auth.uid())))
+with check ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins read manual schedule" on public.coach_manual_daily_schedule;
+create policy "admins read manual schedule"
+on public.coach_manual_daily_schedule
+for select
+to authenticated
+using ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins edit manual schedule" on public.coach_manual_daily_schedule;
+create policy "admins edit manual schedule"
+on public.coach_manual_daily_schedule
+for all
+to authenticated
+using ((select private.is_admin(auth.uid())))
+with check ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins read bonus logs" on public.admin_bonus_xp_logs;
+create policy "admins read bonus logs"
+on public.admin_bonus_xp_logs
+for select
+to authenticated
+using ((select private.is_admin(auth.uid())));
+
+drop policy if exists "admins add bonus logs" on public.admin_bonus_xp_logs;
+create policy "admins add bonus logs"
+on public.admin_bonus_xp_logs
+for insert
+to authenticated
+with check ((select private.is_admin(auth.uid())));

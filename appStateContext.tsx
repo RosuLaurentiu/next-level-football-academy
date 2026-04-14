@@ -18,8 +18,10 @@ export interface AppStateContextValue {
   usesSupabase: boolean;
   requiresEmailAuth: boolean;
   player: PlayerProfile | null;
+  isAdmin: boolean;
   todayKey: string;
   todayPlan: TrainingPlan;
+  todayChallenge: Challenge | null;
   todayQuote: string;
   todayCompletedTaskIds: string[];
   levelInfo: LevelInfo;
@@ -46,6 +48,7 @@ export interface AppStateContextValue {
     description: string,
     focus: string,
   ) => Promise<ActionResult>;
+  regenerateDailyContent: (dateKey?: string) => Promise<ActionResult>;
   refreshLeaderboard: () => Promise<ActionResult>;
 }
 

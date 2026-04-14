@@ -14,7 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [avatarId, setAvatarId] = useState(AVATARS[0].id);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("Earn progress by completing real training drills every day.");
+  const [message, setMessage] = useState("Câștigă progres doar după ce termini cu adevărat exercițiile de antrenament.");
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -34,7 +34,7 @@ export default function Login() {
     setMode("login");
     setIdentifier("sam10");
     setPassword("academy");
-    setMessage("Demo player ready. Tap the button to enter the academy.");
+    setMessage("Jucătorul demo este pregătit. Apasă butonul și intră în academie.");
   };
 
   return (
@@ -45,10 +45,10 @@ export default function Login() {
         </div>
         <div className="login-hero__content">
           <span className="hero-card__eyebrow">Next Level Football Academy</span>
-          <h1>Train at Home. Grow Every Day.</h1>
+          <h1>Antrenează-te acasă. Crește în fiecare zi.</h1>
           <p>
-            A bright football world for children aged 8 to 13 to build skill, discipline,
-            and confidence.
+            O lume de fotbal plină de energie pentru copii de 8-13 ani, unde îți crești
+            tehnica, disciplina și încrederea.
           </p>
         </div>
       </section>
@@ -58,13 +58,13 @@ export default function Login() {
           className={mode === "login" ? "login-tabs__button login-tabs__button--active" : "login-tabs__button"}
           onClick={() => setMode("login")}
         >
-          Log In
+          Autentificare
         </button>
         <button
           className={mode === "signup" ? "login-tabs__button login-tabs__button--active" : "login-tabs__button"}
           onClick={() => setMode("signup")}
         >
-          Create Account
+          Creează cont
         </button>
       </div>
 
@@ -77,23 +77,23 @@ export default function Login() {
         <div className="form-grid">
           {mode === "login" ? (
             <label className="label">
-              {requiresEmailAuth ? "Email" : "Username"}
+              {requiresEmailAuth ? "Email" : "Nume utilizator"}
               <input
                 className="input"
                 value={identifier}
                 onChange={(event) => setIdentifier(event.target.value)}
-                placeholder={requiresEmailAuth ? "player@email.com" : "Your player name"}
+                placeholder={requiresEmailAuth ? "jucator@email.com" : "Numele tău de jucător"}
               />
             </label>
           ) : (
             <>
               <label className="label">
-                Username
+                Nume utilizator
                 <input
                   className="input"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="Your player name"
+                  placeholder="Numele tău de jucător"
                 />
               </label>
 
@@ -105,7 +105,7 @@ export default function Login() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="player@email.com"
+                    placeholder="jucator@email.com"
                   />
                 </label>
               )}
@@ -113,20 +113,20 @@ export default function Login() {
           )}
 
           <label className="label">
-            Password
+            Parolă
             <input
               className="input"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter password"
+              placeholder="Introdu parola"
               onKeyDown={(event) => event.key === "Enter" && void handleSubmit()}
             />
           </label>
 
           {mode === "signup" && (
             <div className="avatar-picker">
-              <span className="label">Choose Avatar</span>
+              <span className="label">Alege avatarul</span>
               <div className="avatar-picker__grid">
                 {AVATARS.map((avatar) => (
                   <button
@@ -144,7 +144,7 @@ export default function Login() {
 
           {usesSupabase && (
             <p className="empty-copy">
-              Supabase is connected, so account login uses email and progress syncs between devices.
+              Supabase este conectat, așa că autentificarea se face cu email, iar progresul se sincronizează între dispozitive.
             </p>
           )}
 
@@ -154,10 +154,10 @@ export default function Login() {
             disabled={submitting}
           >
             {submitting
-              ? "Saving..."
+              ? "Se încarcă..."
               : mode === "login"
-                ? "Enter Training App"
-                : "Start My Academy"}
+                ? "Intră în joc"
+                : "Pornește aventura mea"}
           </button>
         </div>
       </div>
@@ -166,11 +166,11 @@ export default function Login() {
         <div className="card card--compact">
           <div className="demo-row">
             <div>
-              <strong>Try the demo player</strong>
-              <p>Username: sam10 | Password: academy</p>
+              <strong>Încearcă jucătorul demo</strong>
+              <p>Nume utilizator: sam10 | Parolă: academy</p>
             </div>
             <button className="button button--secondary" onClick={useDemoPlayer}>
-              Use Demo
+              Folosește demo
             </button>
           </div>
         </div>

@@ -14,11 +14,11 @@ export default function Index() {
             <Icon name="ball" className="hero-card__icon" />
           </div>
           <span className="hero-card__eyebrow">Next Level Football Academy</span>
-          <h1>Loading Your Training World</h1>
+          <h1>Se încarcă lumea ta de antrenament</h1>
           <p>
             {usesSupabase
-              ? "Connecting to your live football profile and latest academy progress."
-              : "Preparing your local training profile."}
+              ? "Ne conectăm la profilul tău live și la cel mai nou progres din academie."
+              : "Pregătim profilul tău local de antrenament."}
           </p>
         </section>
       </div>

@@ -10,18 +10,19 @@ export interface Badge {
   id: string;
   label: string;
   description: string;
-  rarity: "Rare" | "Epic" | "Legendary";
+  rarity: "Rară" | "Epică" | "Legendară";
   accent: "green" | "orange" | "blue" | "gold";
 }
 
 export interface TrainingTask {
   id: string;
-  category: "Warm-up" | "Ball Control" | "Passing" | "Fitness" | "Bonus";
+  category: "Mental" | "Fizic" | "Tehnic";
   title: string;
   duration: string;
   focus: string;
   description: string;
   steps: string[];
+  exerciseType?: "Respirație" | "Vizualizare" | "Concentrare" | "Dialog pozitiv" | "Recunoștință";
   xp: number;
   accent: "green" | "orange" | "blue" | "gold";
 }
@@ -39,9 +40,10 @@ export interface Challenge {
   title: string;
   description: string;
   target: string;
+  duration?: string;
   xp: number;
   levelRequired: number;
-  difficulty: "Starter" | "Skilled" | "Advanced" | "Coach Pick";
+  difficulty: "Starter" | "Talentat" | "Avansat" | "Alegerea antrenorului";
   coachNote: string;
   rewardText: string;
   badge: Badge;
@@ -64,7 +66,10 @@ export interface ChallengeLogEntry {
 export interface PlayerProfile {
   userId?: string;
   username: string;
+  email?: string | null;
   avatarId: string;
+  role?: "player" | "admin";
+  isSuspended?: boolean;
   totalXp: number;
   completedChallengeIds: string[];
   trainingLog: TrainingLogEntry[];

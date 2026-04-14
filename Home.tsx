@@ -11,6 +11,7 @@ export default function Home() {
     currentWeeklyRank,
     levelInfo,
     streakDays,
+    todayChallenge,
     todayCompletedTaskIds,
     todayKey,
     todayPlan,
@@ -21,11 +22,12 @@ export default function Home() {
     return <Navigate to="/" replace />;
   }
 
-  const nextChallenge = allChallenges.find(
+  const fallbackChallenge = allChallenges.find(
     (challenge) =>
       challenge.levelRequired <= levelInfo.level &&
       !player.completedChallengeIds.includes(challenge.id),
   );
+  const nextChallenge = todayChallenge ?? fallbackChallenge;
   const nextTask = todayPlan.tasks.find((task) => !todayCompletedTaskIds.includes(task.id)) ?? todayPlan.tasks[0];
   const sessionProgress = Math.round((todayCompletedTaskIds.length / todayPlan.tasks.length) * 100);
 
@@ -34,18 +36,18 @@ export default function Home() {
       <section className="hero-card">
         <div className="hero-card__top">
           <div>
-            <span className="hero-card__eyebrow">Welcome Back</span>
+            <span className="hero-card__eyebrow">Bine ai revenit, campionule!</span>
             <h1>{player.username}</h1>
             <p>{formatLongDate(todayKey)}</p>
           </div>
           <div className="hero-chip-row">
             <div className="hero-chip">
               <Icon name="bolt" className="hero-chip__icon" />
-              <span>{player.totalXp} XP</span>
+              <span>{player.totalXp} puncte XP</span>
             </div>
             <div className="hero-chip">
               <Icon name="flag" className="hero-chip__icon" />
-              <span>{streakDays} Day Streak</span>
+              <span>{streakDays} zile consecutive</span>
             </div>
           </div>
         </div>
@@ -59,8 +61,8 @@ export default function Home() {
           value={levelInfo.progress}
           label={
             levelInfo.nextXp
-              ? `Level ${levelInfo.level} ${levelInfo.title} | ${levelInfo.nextXp - player.totalXp} XP to next level`
-              : `Level ${levelInfo.level} ${levelInfo.title}`
+              ? `Nivel ${levelInfo.level} ${levelInfo.title} | ${levelInfo.nextXp - player.totalXp} XP până la nivelul următor`
+              : `Nivel ${levelInfo.level} ${levelInfo.title}`
           }
         />
       </section>
@@ -69,8 +71,8 @@ export default function Home() {
         <div className="action-grid">
           <button className="action-card" onClick={() => navigate("/training")}>
             <Icon name="training" className="action-card__icon" />
-            <strong>Today's Training</strong>
-            <span>{todayCompletedTaskIds.length} of 5 drills complete</span>
+            <strong>Antrenamentul Zilei</strong>
+            <span>{todayCompletedTaskIds.length} din 3 module finalizate</span>
             <div className="mini-track">
               <div className="mini-track__fill" style={{ width: `${sessionProgress}%` }} />
             </div>
@@ -78,26 +80,26 @@ export default function Home() {
 
           <button className="action-card action-card--warm" onClick={() => navigate("/challenges")}>
             <Icon name="trophy" className="action-card__icon" />
-            <strong>Challenge Zone</strong>
-            <span>{player.completedChallengeIds.length} badges earned so far</span>
+            <strong>Zona Provocărilor</strong>
+            <span>{player.completedChallengeIds.length} insigne câștigate până acum</span>
           </button>
         </div>
 
         <div className="card card--highlight">
-          <span className="card__eyebrow">Today's Challenge</span>
-          <h2>{nextChallenge ? nextChallenge.title : "Every unlocked challenge completed"}</h2>
+          <span className="card__eyebrow">Misiunea ta de azi</span>
+          <h2>{nextChallenge ? nextChallenge.title : "Ai terminat toate provocările deblocate"}</h2>
           <p>
             {nextChallenge
-              ? `${nextChallenge.target} | ${nextChallenge.xp} XP reward`
-              : "Replay favourite drills tomorrow to keep your streak alive."}
+              ? `${nextChallenge.target} | Recompensă: ${nextChallenge.xp} XP`
+              : "Repetă mâine exercițiile preferate ca să-ți păstrezi seria activă."}
           </p>
           <button className="button button--secondary" onClick={() => navigate("/challenges")}>
-            Open Challenges
+            Deschide provocările
           </button>
         </div>
 
         <div className="card">
-          <span className="card__eyebrow">Today's Training Task</span>
+          <span className="card__eyebrow">Modulul următor</span>
           <h2>{nextTask.title}</h2>
           <p>{nextTask.description}</p>
           <div className="card-tag-row">
@@ -109,19 +111,19 @@ export default function Home() {
 
         <div className="stats-grid">
           <div className="metric-card">
-            <span>Current Level</span>
+            <span>Nivel curent</span>
             <strong>{levelInfo.level}</strong>
             <small>{levelInfo.title}</small>
           </div>
           <div className="metric-card">
-            <span>Weekly Rank</span>
+            <span>Loc săptămânal</span>
             <strong>#{currentWeeklyRank?.rank ?? "-"}</strong>
-            <small>Friendly competition</small>
+            <small>Competiție prietenoasă</small>
           </div>
           <div className="metric-card">
-            <span>Badges</span>
+            <span>Insigne</span>
             <strong>{player.unlockedBadges.length}</strong>
-            <small>Rare rewards</small>
+            <small>Recompense speciale</small>
           </div>
         </div>
 
@@ -129,7 +131,7 @@ export default function Home() {
           <div className="truth-row">
             <Icon name="check" className="truth-row__icon" />
             <p>
-              Progress is earned only when drills and challenges are marked complete after real practice.
+              Progresul se câștigă doar când modulele și provocările sunt marcate după antrenament real.
             </p>
           </div>
         </div>

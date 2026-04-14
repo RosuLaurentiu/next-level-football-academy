@@ -187,15 +187,15 @@ export function BottomNav() {
   }
 
   const navItems = [
-    { to: "/", label: "Home", icon: "home" as const },
-    { to: "/training", label: "Training", icon: "training" as const },
-    { to: "/challenges", label: "Challenges", icon: "challenge" as const },
-    { to: "/leaderboard", label: "Rank", icon: "leaderboard" as const },
-    { to: "/profile", label: "Profile", icon: "profile" as const },
+    { to: "/", label: "Acasă", icon: "home" as const },
+    { to: "/training", label: "Antren.", icon: "training" as const },
+    { to: "/challenges", label: "Provocări", icon: "challenge" as const },
+    { to: "/leaderboard", label: "Clasament", icon: "leaderboard" as const },
+    { to: "/profile", label: "Profil", icon: "profile" as const },
   ];
 
   return (
-    <nav className="bottom-nav" aria-label="Main navigation">
+    <nav className="bottom-nav" aria-label="Navigație principală">
       {navItems.map((item) => (
         <NavLink
           key={item.to}

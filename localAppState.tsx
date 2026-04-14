@@ -85,8 +85,14 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
         .map((entry) => entry.taskId)
     : [];
   const levelInfo = player ? getLevelInfo(player.totalXp) : getLevelInfo(0);
+  const isAdmin = player?.role === "admin";
   const streakDays = player ? calculateStreak(player.trainingLog, todayKey) : 0;
   const allChallenges = useMemo(() => [...BASE_CHALLENGES, ...store.customChallenges], [store.customChallenges]);
+  const todayChallenge = allChallenges.find(
+    (challenge) =>
+      challenge.levelRequired <= levelInfo.level &&
+      !player?.completedChallengeIds.includes(challenge.id),
+  ) ?? allChallenges.find((challenge) => challenge.levelRequired <= levelInfo.level) ?? null;
   const todayQuote = getQuoteOfTheDay(store.quotes, todayKey);
   const weeklyRankings = player ? buildLeaderboard("weekly", player, todayKey, store.leaderboardSeed) : null;
   const monthlyRankings = player ? buildLeaderboard("monthly", player, todayKey, store.leaderboardSeed) : null;
@@ -96,22 +102,22 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
     const account = store.users.find((user) => normaliseUsername(user.username) === cleanUsername);
 
     if (!account || account.password !== password) {
-      return { ok: false, message: "That username and password do not match our training records." };
+      return { ok: false, message: "Acest nume de utilizator și această parolă nu se potrivesc cu fișa noastră de antrenament." };
     }
 
     setCurrentUsername(account.username);
-    return { ok: true, message: "Welcome back. Your training world is ready." };
+    return { ok: true, message: "Bine ai revenit, campionule! Lumea ta de antrenament este pregătită." };
   };
 
   const signUp = async (username: string, password: string, avatarId: string) => {
     const cleanUsername = username.trim();
 
     if (cleanUsername.length < 2) {
-      return { ok: false, message: "Choose a player name with at least 2 characters." };
+      return { ok: false, message: "Alege un nume de jucător cu cel puțin 2 caractere." };
     }
 
     if (password.trim().length < 4) {
-      return { ok: false, message: "Use a password with at least 4 characters." };
+      return { ok: false, message: "Folosește o parolă cu cel puțin 4 caractere." };
     }
 
     const usernameTaken = store.users.some(
@@ -119,7 +125,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
     );
 
     if (usernameTaken) {
-      return { ok: false, message: "That player name is already on the team sheet." };
+      return { ok: false, message: "Acest nume de jucător este deja pe foaia de echipă." };
     }
 
     const profile = createPlayerProfile(cleanUsername, avatarId);
@@ -131,7 +137,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
     }));
     setCurrentUsername(cleanUsername);
 
-    return { ok: true, message: "Account created. Time to start your academy journey." };
+    return { ok: true, message: "Cont creat. E timpul să începi aventura ta în academie." };
   };
 
   const logout = async () => {
@@ -140,19 +146,19 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
 
   const completeTrainingTask = async (taskId: string) => {
     if (!currentUsername || !player) {
-      return { ok: false, message: "Log in first to save your training." };
+      return { ok: false, message: "Autentifică-te mai întâi ca să-ți salvezi antrenamentul." };
     }
 
     const task = todayPlan.tasks.find((entry) => entry.id === taskId);
     if (!task) {
-      return { ok: false, message: "That drill is not in today's plan." };
+      return { ok: false, message: "Acest exercițiu nu este în planul de azi." };
     }
 
     const alreadyDone = player.trainingLog.some(
       (entry) => entry.dateKey === todayKey && entry.taskId === taskId,
     );
     if (alreadyDone) {
-      return { ok: false, message: "That drill is already completed for today." };
+      return { ok: false, message: "Acest exercițiu este deja finalizat azi." };
     }
 
     setStore((currentStore) => {
@@ -193,7 +199,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
             {
               dateKey: todayKey,
               taskId: "session-bonus",
-              taskTitle: "Full Session Bonus",
+              taskTitle: "Bonus pentru sesiune completă",
               xp: SESSION_BONUS_XP,
             },
           ],
@@ -217,7 +223,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
             {
               dateKey: todayKey,
               taskId: `consistency-${completedMilestone}`,
-              taskTitle: "7-Day Consistency Bonus",
+              taskTitle: "Bonus pentru 7 zile de constanță",
               xp: CONSISTENCY_BONUS_XP,
             },
           ],
@@ -235,25 +241,25 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       };
     });
 
-    return { ok: true, message: `${task.title} completed. XP earned through real practice.` };
+    return { ok: true, message: `${task.title} este finalizat. Ai câștigat puncte XP prin antrenament real!` };
   };
 
   const completeChallenge = async (challengeId: string) => {
     if (!currentUsername || !player) {
-      return { ok: false, message: "Log in first to save your challenge." };
+      return { ok: false, message: "Autentifică-te mai întâi ca să-ți salvezi provocarea." };
     }
 
     const challenge = allChallenges.find((entry) => entry.id === challengeId);
     if (!challenge) {
-      return { ok: false, message: "That challenge could not be found." };
+      return { ok: false, message: "Această provocare nu a putut fi găsită." };
     }
 
     if (levelInfo.level < challenge.levelRequired) {
-      return { ok: false, message: `Reach level ${challenge.levelRequired} to unlock this challenge.` };
+      return { ok: false, message: `Ajungi la nivelul ${challenge.levelRequired} ca să deblochezi această provocare.` };
     }
 
     if (player.completedChallengeIds.includes(challengeId)) {
-      return { ok: false, message: "That challenge badge is already in your collection." };
+      return { ok: false, message: "Insigna acestei provocări este deja în colecția ta." };
     }
 
     setStore((currentStore) => {
@@ -287,13 +293,13 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       };
     });
 
-    return { ok: true, message: `${challenge.title} completed. Badge unlocked.` };
+    return { ok: true, message: `${challenge.title} este finalizată. Insignă deblocată!` };
   };
 
   const addCoachQuote = async (quote: string) => {
     const cleanQuote = quote.trim();
     if (!cleanQuote) {
-      return { ok: false, message: "Write a motivational quote first." };
+      return { ok: false, message: "Scrie mai întâi un mesaj motivațional." };
     }
 
     setStore((currentStore) => ({
@@ -301,7 +307,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       quotes: [cleanQuote, ...currentStore.quotes],
     }));
 
-    return { ok: true, message: "New motivational quote added to the daily rotation." };
+    return { ok: true, message: "Mesajul motivațional a fost adăugat în rotația zilnică." };
   };
 
   const addCoachChallenge = async (title: string, description: string, focus: string) => {
@@ -310,7 +316,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
     const cleanFocus = focus.trim();
 
     if (!cleanTitle || !cleanDescription || !cleanFocus) {
-      return { ok: false, message: "Add a title, challenge idea, and target before publishing." };
+      return { ok: false, message: "Adaugă un titlu, o idee de provocare și o țintă înainte să publici." };
     }
 
     const stamp = Date.now();
@@ -319,16 +325,17 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       title: cleanTitle,
       description: cleanDescription,
       target: cleanFocus,
+      duration: "5-20 min",
       xp: 130,
       levelRequired: 2,
-      difficulty: "Coach Pick",
-      coachNote: "Coach panel challenge. Award progress only after the player completes the full task honestly.",
-      rewardText: "Coach Pick badge unlocked.",
+      difficulty: "Alegerea antrenorului",
+      coachNote: "Provocare din panoul antrenorului. Oferă progres doar după ce jucătorul termină sincer întreaga misiune.",
+      rewardText: "Insigna Alegerea antrenorului a fost deblocată.",
       badge: {
         id: `coach-badge-${stamp}`,
-        label: "Coach Pick",
-        description: `${cleanTitle} completed with strong effort.`,
-        rarity: "Legendary",
+        label: "Alegerea antrenorului",
+        description: `${cleanTitle} a fost terminată cu multă determinare.`,
+        rarity: "Legendară",
         accent: "gold",
       },
     };
@@ -338,7 +345,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       customChallenges: [challenge, ...currentStore.customChallenges],
     }));
 
-    return { ok: true, message: "New coach challenge published for the academy." };
+    return { ok: true, message: "Noua provocare a antrenorului a fost publicată în academie." };
   };
 
   const refreshLeaderboard = async () => {
@@ -348,7 +355,14 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       activeUsers: 150 + ((currentStore.leaderboardSeed + 1) * 13) % 45,
     }));
 
-    return { ok: true, message: "Rankings updated." };
+    return { ok: true, message: "Clasamentele au fost actualizate." };
+  };
+
+  const regenerateDailyContent = async () => {
+    return {
+      ok: false,
+      message: "Generarea zilnica automata este disponibila doar in modul Supabase.",
+    };
   };
 
   const value = useMemo(
@@ -357,8 +371,10 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       usesSupabase: false,
       requiresEmailAuth: false,
       player,
+      isAdmin,
       todayKey,
       todayPlan,
+      todayChallenge,
       todayQuote,
       todayCompletedTaskIds,
       levelInfo,
@@ -376,10 +392,12 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       completeChallenge,
       addCoachQuote,
       addCoachChallenge,
+      regenerateDailyContent,
       refreshLeaderboard,
     }),
     [
       allChallenges,
+      isAdmin,
       levelInfo,
       monthlyRankings,
       player,
@@ -387,6 +405,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       streakDays,
       todayCompletedTaskIds,
       todayKey,
+      todayChallenge,
       todayPlan,
       todayQuote,
       weeklyRankings,

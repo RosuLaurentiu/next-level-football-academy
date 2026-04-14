@@ -6,7 +6,7 @@ import { BadgePill, BottomNav, Icon } from "./ui";
 export default function Challenges() {
   const { allChallenges, completeChallenge, levelInfo, player } = useAppState();
   const [startedChallengeIds, setStartedChallengeIds] = useState<string[]>([]);
-  const [message, setMessage] = useState("Challenge rewards unlock only after honest effort and real completion.");
+  const [message, setMessage] = useState("Recompensele se deblochează doar după efort real și finalizare sinceră.");
 
   if (!player) {
     return <Navigate to="/" replace />;
@@ -15,7 +15,7 @@ export default function Challenges() {
   const startChallenge = (challengeId: string) => {
     if (!startedChallengeIds.includes(challengeId)) {
       setStartedChallengeIds((current) => [...current, challengeId]);
-      setMessage("Challenge started. Come back after you complete the full task.");
+      setMessage("Provocarea a început. Revino după ce o termini complet.");
     }
   };
 
@@ -27,9 +27,9 @@ export default function Challenges() {
   return (
     <div className="screen">
       <section className="hero-card hero-card--challenge">
-        <span className="hero-card__eyebrow">Challenge Screen</span>
-        <h1>Earn Badges and Unlock Levels</h1>
-        <p>Push yourself with focused football challenges and collect premium rewards.</p>
+        <span className="hero-card__eyebrow">Ecranul provocărilor</span>
+        <h1>Câștigă insigne și deblochează niveluri</h1>
+        <p>Provoacă-te cu misiuni de fotbal și adună recompense premium.</p>
       </section>
 
       <div className="stack">
@@ -56,7 +56,7 @@ export default function Challenges() {
                   ) : (
                     <>
                       <Icon name="lock" className="challenge-card__lock-icon" />
-                      <span>Level {challenge.levelRequired}</span>
+                      <span>Nivel {challenge.levelRequired}</span>
                     </>
                   )}
                 </div>
@@ -69,7 +69,7 @@ export default function Challenges() {
               </div>
 
               <div className="coach-note">
-                <strong>Coach Tip</strong>
+                <strong>Sfatul antrenorului</strong>
                 <p>{challenge.coachNote}</p>
               </div>
 
@@ -81,14 +81,14 @@ export default function Challenges() {
                   onClick={() => startChallenge(challenge.id)}
                   disabled={completed || !unlocked}
                 >
-                  Start Challenge
+                  Începe provocarea
                 </button>
                 <button
                   className="button button--primary"
                   onClick={() => void finishChallenge(challenge.id)}
                   disabled={completed || !unlocked || !started}
                 >
-                  {completed ? "Badge Earned" : "I Completed It"}
+                  {completed ? "Insignă câștigată" : "Am terminat-o"}
                 </button>
               </div>
             </div>

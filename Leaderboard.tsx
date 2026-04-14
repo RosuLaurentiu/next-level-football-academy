@@ -25,21 +25,21 @@ export default function Leaderboard() {
   return (
     <div className="screen">
       <section className="hero-card hero-card--leaderboard">
-        <span className="hero-card__eyebrow">Leaderboard Screen</span>
-        <h1>Top 10 Players</h1>
-        <p>Friendly weekly and monthly rankings keep the academy competitive and fun.</p>
+        <span className="hero-card__eyebrow">Ecranul clasamentului</span>
+        <h1>Top 10 jucători</h1>
+        <p>Clasamentele săptămânale și lunare păstrează academia competitivă și distractivă.</p>
         <div className="segment-control">
           <button
             className={tab === "weekly" ? "segment-control__button segment-control__button--active" : "segment-control__button"}
             onClick={() => setTab("weekly")}
           >
-            Weekly Ranking
+            Clasament săptămânal
           </button>
           <button
             className={tab === "monthly" ? "segment-control__button segment-control__button--active" : "segment-control__button"}
             onClick={() => setTab("monthly")}
           >
-            Monthly Ranking
+            Clasament lunar
           </button>
         </div>
       </section>
@@ -73,7 +73,7 @@ export default function Leaderboard() {
               <AvatarBadge avatarId={entry.avatarId} size="small" />
               <div className="leaderboard-row__player">
                 <strong>{entry.username}</strong>
-                <span>Level {entry.level} | {entry.streak} day streak</span>
+                <span>Nivel {entry.level} | {entry.streak} zile consecutive</span>
               </div>
               <div className="leaderboard-row__xp">{entry.xp} XP</div>
             </div>
@@ -85,7 +85,7 @@ export default function Leaderboard() {
             <div className="truth-row">
               <Icon name="leaderboard" className="truth-row__icon" />
               <p>
-                Your current {tab} position is #{currentRank.rank}. Keep training and you can climb into the top 10.
+                Locul tău {tab === "weekly" ? "săptămânal" : "lunar"} este #{currentRank.rank}. Continuă tot așa și poți urca în top 10.
               </p>
             </div>
           </div>

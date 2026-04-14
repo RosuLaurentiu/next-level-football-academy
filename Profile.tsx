@@ -5,7 +5,7 @@ import { AvatarBadge, BadgePill, BottomNav, Icon, ProgressBar } from "./ui";
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { allChallenges, levelInfo, logout, player, streakDays } = useAppState();
+  const { allChallenges, isAdmin, levelInfo, logout, player, streakDays } = useAppState();
 
   if (!player) {
     return <Navigate to="/" replace />;
@@ -20,17 +20,17 @@ export default function Profile() {
     <div className="screen">
       <section className="hero-card hero-card--profile">
         <AvatarBadge avatarId={player.avatarId} size="large" />
-        <span className="hero-card__eyebrow">Profile Screen</span>
+        <span className="hero-card__eyebrow">Ecranul profilului</span>
         <h1>{player.username}</h1>
         <p>
-          Level {levelInfo.level} | {levelInfo.title}
+          Nivel {levelInfo.level} | {levelInfo.title}
         </p>
         <ProgressBar
           value={levelInfo.progress}
           label={
             levelInfo.nextXp
-              ? `${levelInfo.nextXp - player.totalXp} XP until the next level`
-              : "Top academy level reached"
+              ? `${levelInfo.nextXp - player.totalXp} XP până la nivelul următor`
+              : "Ai atins nivelul maxim al academiei"
           }
         />
       </section>
@@ -40,29 +40,29 @@ export default function Profile() {
           <div className="metric-card">
             <span>Total XP</span>
             <strong>{player.totalXp}</strong>
-            <small>All earned through training</small>
+            <small>Totul câștigat prin antrenament</small>
           </div>
           <div className="metric-card">
-            <span>Streak Days</span>
+            <span>Zile consecutive</span>
             <strong>{streakDays}</strong>
-            <small>Stay consistent</small>
+            <small>Rămâi constant</small>
           </div>
           <div className="metric-card">
-            <span>Challenges</span>
+            <span>Provocări</span>
             <strong>{player.completedChallengeIds.length}</strong>
-            <small>Completed</small>
+            <small>Finalizate</small>
           </div>
         </div>
 
         <div className="card">
-          <span className="card__eyebrow">Player Summary</span>
+          <span className="card__eyebrow">Rezumatul jucătorului</span>
           <div className="profile-summary">
             <div>
-              <strong>Started</strong>
+              <strong>Început</strong>
               <p>{formatLongDate(player.createdAt)}</p>
             </div>
             <div>
-              <strong>Full Sessions</strong>
+              <strong>Sesiuni complete</strong>
               <p>{completedSessions}</p>
             </div>
             <div>
@@ -73,7 +73,7 @@ export default function Profile() {
         </div>
 
         <div className="card">
-          <span className="card__eyebrow">Badges Earned</span>
+          <span className="card__eyebrow">Insigne câștigate</span>
           {player.unlockedBadges.length > 0 ? (
             <div className="badge-grid">
               {player.unlockedBadges.map((badge) => (
@@ -81,12 +81,12 @@ export default function Profile() {
               ))}
             </div>
           ) : (
-            <p className="empty-copy">Complete challenges and consistency goals to unlock rare badges.</p>
+            <p className="empty-copy">Termină provocări și obiective de constanță ca să deblochezi insigne speciale.</p>
           )}
         </div>
 
         <div className="card">
-          <span className="card__eyebrow">Completed Challenges</span>
+          <span className="card__eyebrow">Provocări finalizate</span>
           {completedChallengeNames.length > 0 ? (
             <div className="challenge-name-list">
               {completedChallengeNames.map((name) => (
@@ -96,14 +96,16 @@ export default function Profile() {
               ))}
             </div>
           ) : (
-            <p className="empty-copy">No challenge completed yet. Head to the challenge screen and earn your first badge.</p>
+            <p className="empty-copy">Încă nu ai terminat nicio provocare. Intră în zona provocărilor și câștigă prima ta insignă.</p>
           )}
         </div>
 
-        <button className="button button--secondary" onClick={() => navigate("/coach")}>
-          <Icon name="coach" className="button__icon" />
-          Open Coach Panel
-        </button>
+        {isAdmin && (
+          <button className="button button--secondary" onClick={() => navigate("/coach")}>
+            <Icon name="coach" className="button__icon" />
+            Deschide panoul antrenorului
+          </button>
+        )}
 
         <button
           className="button button--dark"
@@ -113,7 +115,7 @@ export default function Profile() {
           }}
         >
           <Icon name="profile" className="button__icon" />
-          Log Out
+          Ieșire
         </button>
       </div>
 
