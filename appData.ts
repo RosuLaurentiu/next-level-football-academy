@@ -10,6 +10,7 @@ import type {
   TrainingLogEntry,
   TrainingPlan,
   TrainingTask,
+  TrainingTaskStep,
 } from "./types";
 
 export const SESSION_BONUS_XP = 60;
@@ -48,10 +49,22 @@ function createMentalTask(
     focus,
     description,
     exerciseType,
-    steps: [description],
+    steps: [
+      {
+        title: "Exercițiul mental",
+        description,
+      },
+    ],
     xp: 25,
     accent: "blue",
   };
+}
+
+function mapSteps(steps: string[], labels: string[]): TrainingTaskStep[] {
+  return steps.map((description, index) => ({
+    title: labels[index] ?? `Pasul ${index + 1}`,
+    description,
+  }));
 }
 
 function createPhysicalTask(
@@ -69,7 +82,7 @@ function createPhysicalTask(
     duration,
     focus,
     description,
-    steps,
+    steps: mapSteps(steps, ["Tehnică lentă", "Repetare", "Viteză", "Reacție / coordonare"]),
     xp: 35,
     accent: "orange",
   };
@@ -90,7 +103,7 @@ function createTechnicalTask(
     duration,
     focus,
     description,
-    steps,
+    steps: mapSteps(steps, ["Repetare", "Complexitate", "Viteză", "Provocare cognitivă"]),
     xp: 45,
     accent: "green",
   };

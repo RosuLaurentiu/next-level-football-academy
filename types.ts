@@ -14,6 +14,12 @@ export interface Badge {
   accent: "green" | "orange" | "blue" | "gold";
 }
 
+export interface TrainingTaskStep {
+  title: string;
+  description: string;
+  videoUrl?: string;
+}
+
 export interface TrainingTask {
   id: string;
   category: "Mental" | "Fizic" | "Tehnic";
@@ -21,7 +27,9 @@ export interface TrainingTask {
   duration: string;
   focus: string;
   description: string;
-  steps: string[];
+  steps: TrainingTaskStep[];
+  videoUrl?: string;
+  thumbnailUrl?: string;
   exerciseType?: "Respirație" | "Vizualizare" | "Concentrare" | "Dialog pozitiv" | "Recunoștință";
   xp: number;
   accent: "green" | "orange" | "blue" | "gold";

@@ -853,6 +853,109 @@ button {
   text-align: center;
 }
 
+.training-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(7, 16, 38, 0.78);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+.training-modal__sheet {
+  width: min(460px, 100%);
+  max-height: 100vh;
+  overflow: auto;
+  background: #f7fbff;
+  border-radius: 28px 28px 0 0;
+  padding: 18px 16px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.training-modal__header {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.training-modal__header h2 {
+  margin: 6px 0 4px;
+}
+
+.training-modal__header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.training-modal__close {
+  width: auto;
+  min-height: 42px;
+  padding-inline: 12px;
+  border-radius: 12px;
+}
+
+.training-modal__progress {
+  margin: 12px 0 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(20, 33, 65, 0.05);
+}
+
+.training-modal__progress strong {
+  display: block;
+}
+
+.training-modal__progress p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.training-modal__video {
+  border-radius: 18px;
+  overflow: hidden;
+  background: #0f1a37;
+  min-height: 220px;
+  margin-bottom: 10px;
+}
+
+.training-modal__video iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  display: block;
+}
+
+.training-modal__video-fallback {
+  padding: 22px;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.5;
+}
+
+.training-modal__actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.training-modal__success {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+  padding: 12px 4px 6px;
+}
+
+.training-modal__success h2 {
+  margin: 0;
+}
+
+.training-modal__success p {
+  margin: 0;
+  color: var(--muted);
+}
+
 .login-hero {
   display: grid;
   gap: 18px;

@@ -82,7 +82,13 @@ interface DailyGeneratedTask {
   duration: string;
   focus: string;
   description: string;
-  steps: string[];
+  steps: Array<{
+    title?: string;
+    description?: string;
+    videoUrl?: string;
+  }>;
+  videoUrl?: string;
+  thumbnailUrl?: string;
   exerciseType?: "Respirație" | "Vizualizare" | "Concentrare" | "Dialog pozitiv" | "Recunoștință";
   xp: number;
   accent: "green" | "orange" | "blue" | "gold";
@@ -186,7 +192,7 @@ function mapCoachChallenge(row: CoachChallengeRow): Challenge {
   };
 }
 
-function normaliseSteps(value: unknown): string[] {
+function normaliseSteps(value: unknown): TrainingTask["steps"] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -194,24 +200,29 @@ function normaliseSteps(value: unknown): string[] {
   return value
     .map((entry) => {
       if (typeof entry === "string") {
-        return entry;
+        return {
+          title: "Pas",
+          description: entry,
+        };
       }
 
       if (entry && typeof entry === "object") {
         const record = entry as Record<string, unknown>;
         const title = typeof record.title === "string" ? record.title.trim() : "";
         const description = typeof record.description === "string" ? record.description.trim() : "";
+        const videoUrl = typeof record.videoUrl === "string" ? record.videoUrl.trim() : "";
+        const fallbackVideo = typeof record.video_url === "string" ? record.video_url.trim() : "";
 
-        if (title && description) {
-          return `${title}: ${description}`;
-        }
-
-        return title || description;
+        return {
+          title: title || "Pas",
+          description: description || title || "",
+          videoUrl: videoUrl || fallbackVideo || undefined,
+        };
       }
 
-      return "";
+      return null;
     })
-    .filter((entry) => entry.length > 0);
+    .filter((entry): entry is { title: string; description: string; videoUrl?: string } => Boolean(entry && entry.description));
 }
 
 function toDailyTask(value: unknown, fallbackAccent: "green" | "orange" | "blue" | "gold"): TrainingTask {
@@ -225,6 +236,13 @@ function toDailyTask(value: unknown, fallbackAccent: "green" | "orange" | "blue"
     focus: String(record.focus ?? "Focus"),
     description: String(record.description ?? ""),
     steps: normaliseSteps(record.steps),
+    videoUrl:
+      (typeof record.videoUrl === "string" ? record.videoUrl : undefined) ??
+      (typeof record.youtubeUrl === "string" ? record.youtubeUrl : undefined) ??
+      (typeof record.youtube_url === "string" ? record.youtube_url : undefined),
+    thumbnailUrl:
+      (typeof record.thumbnailUrl === "string" ? record.thumbnailUrl : undefined) ??
+      (typeof record.thumbnail_url === "string" ? record.thumbnail_url : undefined),
     exerciseType: record.exerciseType as TrainingTask["exerciseType"] | undefined,
     xp: Number(record.xp ?? 0),
     accent: (record.accent as TrainingTask["accent"]) ?? fallbackAccent,
