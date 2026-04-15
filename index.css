@@ -459,6 +459,33 @@ button {
   box-shadow: none;
 }
 
+.message-banner--success {
+  border-color: rgba(16, 209, 147, 0.32);
+  box-shadow: 0 12px 28px rgba(16, 209, 147, 0.12);
+}
+
+.coach-confirmation {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(16, 209, 147, 0.12);
+  border: 1px solid rgba(16, 209, 147, 0.24);
+  color: #dcfff1;
+  font-size: 0.8rem;
+  font-weight: 800;
+  animation: rise-in 0.2s ease;
+}
+
+.coach-confirmation__icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
 .login-tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -544,6 +571,11 @@ button {
   border-radius: 18px;
   font-weight: 800;
   transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.button--confirmed {
+  box-shadow: 0 0 0 1px rgba(16, 209, 147, 0.44), 0 12px 28px rgba(16, 209, 147, 0.18);
+  filter: saturate(1.08);
 }
 
 .button:disabled {
@@ -1136,6 +1168,12 @@ body {
   background: linear-gradient(135deg, #10203d, #1a3d79);
 }
 
+.button--danger {
+  color: #fff5f5;
+  background: linear-gradient(135deg, rgba(120, 31, 38, 0.96), rgba(214, 61, 67, 0.94));
+  box-shadow: 0 12px 26px rgba(214, 61, 67, 0.22);
+}
+
 .label {
   color: #edf4ff;
 }
@@ -1402,6 +1440,13 @@ body {
   padding-inline: 14px;
 }
 
+.button--fit {
+  width: auto;
+  min-width: 220px;
+  max-width: 100%;
+  justify-self: start;
+}
+
 .segment-control__button {
   min-height: 48px;
 }
@@ -1468,6 +1513,10 @@ textarea.input {
   margin: 18px 0;
 }
 
+.segment-control--admin {
+  margin-bottom: 2px;
+}
+
 .admin-setting-card {
   display: grid;
   gap: 12px;
@@ -1493,7 +1542,32 @@ textarea.input {
 }
 
 .leaderboard-row--admin {
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(96px, auto) auto auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.leaderboard-row__actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: 10px;
+  justify-self: end;
+}
+
+.leaderboard-row--admin .input--compact {
+  width: auto;
+  min-width: 96px;
+  justify-self: end;
+}
+
+.leaderboard-row--admin .button--inline {
+  min-width: 92px;
+  padding-inline: 12px;
+}
+
+.leaderboard-row--admin .button--danger {
+  min-width: 144px;
 }
 
 .history-row,
@@ -1612,6 +1686,16 @@ textarea.input {
   .leaderboard-row--admin,
   .task-card__actions {
     grid-template-columns: 1fr;
+  }
+
+  .button--fit {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .leaderboard-row__actions {
+    grid-auto-flow: row;
+    grid-auto-columns: 1fr;
   }
 
   .training-modal__sheet {

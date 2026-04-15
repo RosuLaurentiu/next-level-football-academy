@@ -106,6 +106,8 @@ export default function CoachPanel() {
   const { isAdmin, player, regenerateDailyContent, refreshLeaderboard, weeklyLeaderboard } = useAppState();
   const [section, setSection] = useState<AdminSection>("dashboard");
   const [message, setMessage] = useState("Panoul antrenorului este conectat live la academie.");
+  const [confirmationText, setConfirmationText] = useState("");
+  const [confirmedActionId, setConfirmedActionId] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<DashboardSnapshot>(defaultDashboard);
   const [settings, setSettings] = useState<AdminSettingsRow>(defaultSettings);
   const [modules, setModules] = useState<CoachModuleRow[]>([]);
@@ -122,6 +124,7 @@ export default function CoachPanel() {
   const [bonusUserId, setBonusUserId] = useState("");
   const [bonusXp, setBonusXp] = useState(100);
   const [fraudUserId, setFraudUserId] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [newModule, setNewModule] = useState({
     category: "Mental" as ModuleCategory,
     title: "",
@@ -150,9 +153,31 @@ export default function CoachPanel() {
     active: true,
   });
 
+  const showActionError = (text: string) => {
+    setMessage(text);
+    setConfirmationText("");
+    setConfirmedActionId(null);
+  };
+
+  const showActionSuccess = (text: string, actionId?: string) => {
+    setMessage(text);
+    setConfirmationText(text);
+    setConfirmedActionId(actionId ?? null);
+  };
+
+  const getActionButtonClass = (baseClassName: string, actionId?: string) =>
+    confirmedActionId === actionId ? `${baseClassName} button--confirmed` : baseClassName;
+
+  const getDeleteButtonClass = (actionId: string) =>
+    pendingDeleteId === actionId ? "button button--danger button--inline" : "button button--dark button--inline";
+
+  const clearPendingDelete = () => {
+    setPendingDeleteId(null);
+  };
+
   const loadData = async (searchText = search) => {
     if (!supabase) {
-      return;
+      return false;
     }
 
     const [dashboardResult, settingsResult, modulesResult, challengesResult, usersResult] = await Promise.all([
@@ -179,8 +204,8 @@ export default function CoachPanel() {
       usersResult.error;
 
     if (error) {
-      setMessage(error.message);
-      return;
+      showActionError(error.message);
+      return false;
     }
 
     setDashboard((dashboardResult.data as DashboardSnapshot) ?? defaultDashboard);
@@ -188,6 +213,7 @@ export default function CoachPanel() {
     setModules(modulesResult.data ?? []);
     setChallenges(challengesResult.data ?? []);
     setUsers(Array.isArray(usersResult.data) ? usersResult.data : []);
+    return true;
   };
 
   useEffect(() => {
@@ -213,6 +239,23 @@ export default function CoachPanel() {
     };
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!confirmationText && !confirmedActionId) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setConfirmationText("");
+      setConfirmedActionId(null);
+    }, 1800);
+
+    return () => window.clearTimeout(timeout);
+  }, [confirmationText, confirmedActionId]);
+
+  useEffect(() => {
+    clearPendingDelete();
+  }, [section]);
+
   const mentalOptions = useMemo(
     () => modules.filter((module) => module.category === "Mental" && module.is_active),
     [modules],
@@ -236,7 +279,7 @@ export default function CoachPanel() {
 
   const createModule = async () => {
     if (!supabase || !newModule.title.trim() || !newModule.description.trim()) {
-      setMessage("Completează titlul și descrierea modulului.");
+      showActionError("Completează titlul și descrierea modulului.");
       return;
     }
 
@@ -266,7 +309,11 @@ export default function CoachPanel() {
       created_by: player.userId ?? null,
     });
 
-    setMessage(result.error ? result.error.message : "Modul nou salvat.");
+    if (result.error) {
+      showActionError(result.error.message);
+    } else {
+      showActionSuccess("Modul nou salvat.", "create-module");
+    }
 
     if (!result.error) {
       setNewModule((current) => ({
@@ -284,7 +331,7 @@ export default function CoachPanel() {
 
   const createChallenge = async () => {
     if (!supabase || !newChallenge.title.trim() || !newChallenge.description.trim()) {
-      setMessage("Completează titlul și descrierea provocării.");
+      showActionError("Completează titlul și descrierea provocării.");
       return;
     }
 
@@ -313,7 +360,11 @@ export default function CoachPanel() {
       created_by: player.userId ?? null,
     });
 
-    setMessage(result.error ? result.error.message : "Provocare nouă salvată.");
+    if (result.error) {
+      showActionError(result.error.message);
+    } else {
+      showActionSuccess("Provocare nouă salvată.", "create-challenge");
+    }
 
     if (!result.error) {
       setNewChallenge((current) => ({
@@ -348,7 +399,11 @@ export default function CoachPanel() {
       maintenance_enabled: settings.maintenance_mode,
     });
 
-    setMessage(result.error ? result.error.message : "Setările academiei au fost salvate.");
+    if (result.error) {
+      showActionError(result.error.message);
+    } else {
+      showActionSuccess("Setările academiei au fost salvate.", "save-settings");
+    }
 
     if (!result.error) {
       await loadData();
@@ -383,10 +438,17 @@ export default function CoachPanel() {
           ))}
         </div>
 
-        <div className="message-banner">
+        <div className={confirmationText ? "message-banner message-banner--success" : "message-banner"}>
           <Icon name="flag" className="message-banner__icon" />
           <p>{message}</p>
         </div>
+
+        {confirmationText ? (
+          <div className="coach-confirmation" aria-live="polite">
+            <Icon name="check" className="coach-confirmation__icon" />
+            <span>{confirmationText}</span>
+          </div>
+        ) : null}
 
         {section === "dashboard" && (
           <>
@@ -431,14 +493,28 @@ export default function CoachPanel() {
               />
               <div className="task-card__actions">
                 <button
-                  className="button button--primary"
-                  onClick={async () => setMessage((await regenerateDailyContent()).message)}
+                  className={getActionButtonClass("button button--primary", "regenerate-day")}
+                  onClick={async () => {
+                    const result = await regenerateDailyContent();
+                    if (result.ok) {
+                      showActionSuccess(result.message, "regenerate-day");
+                    } else {
+                      showActionError(result.message);
+                    }
+                  }}
                 >
                   Regenerează ziua
                 </button>
                 <button
-                  className="button button--secondary"
-                  onClick={async () => setMessage((await refreshLeaderboard()).message)}
+                  className={getActionButtonClass("button button--secondary", "refresh-leaderboard")}
+                  onClick={async () => {
+                    const result = await refreshLeaderboard();
+                    if (result.ok) {
+                      showActionSuccess(result.message, "refresh-leaderboard");
+                    } else {
+                      showActionError(result.message);
+                    }
+                  }}
                 >
                   Actualizează clasamentul
                 </button>
@@ -588,7 +664,7 @@ export default function CoachPanel() {
                   />
                 </label>
               </div>
-              <button className="button button--primary" onClick={createModule}>
+              <button className={getActionButtonClass("button button--primary button--fit", "create-module")} onClick={createModule}>
                 Salvează modulul
               </button>
             </div>
@@ -685,7 +761,7 @@ export default function CoachPanel() {
                   />
                 </label>
               </div>
-              <button className="button button--secondary" onClick={createChallenge}>
+              <button className={getActionButtonClass("button button--secondary button--fit", "create-challenge")} onClick={createChallenge}>
                 Salvează provocarea
               </button>
             </div>
@@ -706,7 +782,7 @@ export default function CoachPanel() {
                       </span>
                     </div>
                     <button
-                      className="button button--ghost button--inline"
+                      className={getActionButtonClass("button button--ghost button--inline", `toggle-module-${module.id}`)}
                       onClick={async () => {
                         if (!supabase) {
                           return;
@@ -715,7 +791,12 @@ export default function CoachPanel() {
                           .from("coach_training_modules")
                           .update({ is_active: !module.is_active })
                           .eq("id", module.id);
-                        setMessage(result.error ? result.error.message : "Modul actualizat.");
+                        if (result.error) {
+                          showActionError(result.error.message);
+                        } else {
+                          setPendingDeleteId(null);
+                          showActionSuccess("Modul actualizat.", `toggle-module-${module.id}`);
+                        }
                         if (!result.error) {
                           await loadData();
                         }
@@ -724,19 +805,30 @@ export default function CoachPanel() {
                       {module.is_active ? "Dezactivează" : "Activează"}
                     </button>
                     <button
-                      className="button button--dark button--inline"
+                      className={getDeleteButtonClass(`delete-module-${module.id}`)}
                       onClick={async () => {
+                        const deleteKey = `delete-module-${module.id}`;
+                        if (pendingDeleteId !== deleteKey) {
+                          setPendingDeleteId(deleteKey);
+                          showActionError("Apasă din nou pentru a șterge modulul.");
+                          return;
+                        }
                         if (!supabase) {
                           return;
                         }
                         const result = await supabase.from("coach_training_modules").delete().eq("id", module.id);
-                        setMessage(result.error ? result.error.message : "Modul șters.");
+                        if (result.error) {
+                          showActionError(result.error.message);
+                        } else {
+                          showActionSuccess("Modul șters.", deleteKey);
+                        }
+                        setPendingDeleteId(null);
                         if (!result.error) {
                           await loadData();
                         }
                       }}
                     >
-                      Șterge
+                      {pendingDeleteId === `delete-module-${module.id}` ? "Confirmă ștergerea" : "Șterge"}
                     </button>
                   </div>
                 ))}
@@ -750,7 +842,7 @@ export default function CoachPanel() {
                       </span>
                     </div>
                     <button
-                      className="button button--ghost button--inline"
+                      className={getActionButtonClass("button button--ghost button--inline", `toggle-challenge-${challenge.id}`)}
                       onClick={async () => {
                         if (!supabase) {
                           return;
@@ -759,7 +851,12 @@ export default function CoachPanel() {
                           .from("coach_challenges")
                           .update({ is_active: !challenge.is_active })
                           .eq("id", challenge.id);
-                        setMessage(result.error ? result.error.message : "Provocare actualizată.");
+                        if (result.error) {
+                          showActionError(result.error.message);
+                        } else {
+                          setPendingDeleteId(null);
+                          showActionSuccess("Provocare actualizată.", `toggle-challenge-${challenge.id}`);
+                        }
                         if (!result.error) {
                           await loadData();
                         }
@@ -768,19 +865,30 @@ export default function CoachPanel() {
                       {challenge.is_active ? "Dezactivează" : "Activează"}
                     </button>
                     <button
-                      className="button button--dark button--inline"
+                      className={getDeleteButtonClass(`delete-challenge-${challenge.id}`)}
                       onClick={async () => {
+                        const deleteKey = `delete-challenge-${challenge.id}`;
+                        if (pendingDeleteId !== deleteKey) {
+                          setPendingDeleteId(deleteKey);
+                          showActionError("Apasă din nou pentru a șterge provocarea.");
+                          return;
+                        }
                         if (!supabase) {
                           return;
                         }
                         const result = await supabase.from("coach_challenges").delete().eq("id", challenge.id);
-                        setMessage(result.error ? result.error.message : "Provocare ștearsă.");
+                        if (result.error) {
+                          showActionError(result.error.message);
+                        } else {
+                          showActionSuccess("Provocare ștearsă.", deleteKey);
+                        }
+                        setPendingDeleteId(null);
                         if (!result.error) {
                           await loadData();
                         }
                       }}
                     >
-                      Șterge
+                      {pendingDeleteId === `delete-challenge-${challenge.id}` ? "Confirmă ștergerea" : "Șterge"}
                     </button>
                   </div>
                 ))}
@@ -836,10 +944,10 @@ export default function CoachPanel() {
             </div>
             <div className="task-card__actions">
               <button
-                className="button button--primary"
+                className={getActionButtonClass("button button--primary", "save-day")}
                 onClick={async () => {
                   if (!supabase || !manualMentalId || !manualPhysicalId || !manualTechnicalId) {
-                    setMessage("Alege toate cele 3 module de bază.");
+                    showActionError("Alege toate cele 3 module de bază.");
                     return;
                   }
                   const result = await supabase.rpc("admin_set_manual_daily_schedule", {
@@ -849,17 +957,31 @@ export default function CoachPanel() {
                     technical_id: manualTechnicalId,
                     challenge_text_id: manualChallengeId || null,
                   });
-                  setMessage(result.error ? result.error.message : "Programul manual a fost salvat.");
+                  if (result.error) {
+                    showActionError(result.error.message);
+                  } else {
+                    showActionSuccess("Programul manual a fost salvat.", "save-day");
+                  }
                 }}
               >
                 Salvează ziua
               </button>
-              <button className="button button--secondary" onClick={async () => setMessage((await regenerateDailyContent(manualDate)).message)}>
+              <button
+                className={getActionButtonClass("button button--secondary", "regenerate-date")}
+                onClick={async () => {
+                  const result = await regenerateDailyContent(manualDate);
+                  if (result.ok) {
+                    showActionSuccess(result.message, "regenerate-date");
+                  } else {
+                    showActionError(result.message);
+                  }
+                }}
+              >
                 Regenerează data
               </button>
             </div>
             <button
-              className="button button--ghost"
+              className={getActionButtonClass("button button--ghost button--fit", "preview-tomorrow")}
               onClick={async () => {
                 if (!supabase) {
                   return;
@@ -869,7 +991,7 @@ export default function CoachPanel() {
                   force_regenerate: false,
                 });
                 if (result.error) {
-                  setMessage(result.error.message);
+                  showActionError(result.error.message);
                   return;
                 }
                 const data = result.data as Record<string, unknown>;
@@ -877,6 +999,7 @@ export default function CoachPanel() {
                 const physical = (data.physical as Record<string, unknown>)?.title;
                 const technical = (data.technical as Record<string, unknown>)?.title;
                 setPreviewTomorrow(`Mâine: ${String(mental ?? "-")} • ${String(physical ?? "-")} • ${String(technical ?? "-")}`);
+                showActionSuccess("Previzualizarea pentru mâine este gata.", "preview-tomorrow");
               }}
             >
               Previzualizează mâine
@@ -905,17 +1028,22 @@ export default function CoachPanel() {
                 ))}
               </div>
               <button
-                className="button button--secondary"
+                className={getActionButtonClass("button button--secondary", "reset-weekly")}
                 onClick={async () => {
                   if (!supabase) {
                     return;
                   }
                   const result = await supabase.rpc("admin_reset_weekly_ranking");
                   if (result.error) {
-                    setMessage(result.error.message);
+                    showActionError(result.error.message);
                     return;
                   }
-                  setMessage((await refreshLeaderboard()).message);
+                  const refreshResult = await refreshLeaderboard();
+                  if (refreshResult.ok) {
+                    showActionSuccess(refreshResult.message, "reset-weekly");
+                  } else {
+                    showActionError(refreshResult.message);
+                  }
                 }}
               >
                 Resetează clasamentul săptămânal
@@ -942,10 +1070,10 @@ export default function CoachPanel() {
                 </label>
               </div>
               <button
-                className="button button--primary"
+                className={getActionButtonClass("button button--primary button--fit", "award-bonus")}
                 onClick={async () => {
                   if (!supabase || !bonusUserId) {
-                    setMessage("Alege jucătorul pentru bonus.");
+                    showActionError("Alege jucătorul pentru bonus.");
                     return;
                   }
                   const result = await supabase.rpc("admin_award_bonus_xp", {
@@ -953,7 +1081,11 @@ export default function CoachPanel() {
                     xp_amount: bonusXp,
                     reason_text: "Bonus manual coach",
                   });
-                  setMessage(result.error ? result.error.message : "Bonusul a fost acordat.");
+                  if (result.error) {
+                    showActionError(result.error.message);
+                  } else {
+                    showActionSuccess("Bonusul a fost acordat.", "award-bonus");
+                  }
                   if (!result.error) {
                     await loadData();
                   }
@@ -971,10 +1103,10 @@ export default function CoachPanel() {
                   </select>
                 </label>
                 <button
-                  className="button button--dark"
+                  className={getActionButtonClass("button button--dark button--fit", "remove-fraud")}
                   onClick={async () => {
                     if (!supabase || !fraudUserId) {
-                      setMessage("Alege jucătorul verificat.");
+                      showActionError("Alege jucătorul verificat.");
                       return;
                     }
                     const result = await supabase.rpc("admin_remove_fraudulent_scores", {
@@ -982,7 +1114,11 @@ export default function CoachPanel() {
                       from_date: getTodayKey(),
                       reason_text: "Verificare coach",
                     });
-                    setMessage(result.error ? result.error.message : "Scorurile suspecte au fost eliminate.");
+                    if (result.error) {
+                      showActionError(result.error.message);
+                    } else {
+                      showActionSuccess("Scorurile suspecte au fost eliminate.", "remove-fraud");
+                    }
                     if (!result.error) {
                       await loadData();
                     }
@@ -1007,7 +1143,15 @@ export default function CoachPanel() {
                 Caută jucător
                 <input className="input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nume sau email" />
               </label>
-              <button className="button button--secondary" onClick={() => void loadData(search)}>
+              <button
+                className={getActionButtonClass("button button--secondary button--fit", "refresh-users")}
+                onClick={async () => {
+                  const loaded = await loadData(search);
+                  if (loaded) {
+                    showActionSuccess("Lista jucătorilor a fost actualizată.", "refresh-users");
+                  }
+                }}
+              >
                 Actualizează lista
               </button>
             </div>
@@ -1033,7 +1177,11 @@ export default function CoachPanel() {
                         target_user_id: user.user_id,
                         next_role: event.target.value,
                       });
-                      setMessage(result.error ? result.error.message : "Rolul a fost actualizat.");
+                      if (result.error) {
+                        showActionError(result.error.message);
+                      } else {
+                        showActionSuccess("Rolul a fost actualizat.", `role-${user.user_id}`);
+                      }
                       if (!result.error) {
                         await loadData();
                       }
@@ -1042,37 +1190,47 @@ export default function CoachPanel() {
                     <option value="player">player</option>
                     <option value="admin">admin</option>
                   </select>
-                  <button
-                    className="button button--ghost button--inline"
-                    onClick={async () => {
-                      if (!supabase) {
-                        return;
-                      }
-                      const result = await supabase.rpc("admin_set_user_suspension", {
-                        target_user_id: user.user_id,
-                        suspended: !user.is_suspended,
-                      });
-                      setMessage(result.error ? result.error.message : user.is_suspended ? "Cont reactivat." : "Cont suspendat.");
-                      if (!result.error) {
-                        await loadData();
-                      }
-                    }}
-                  >
-                    {user.is_suspended ? "Reactivează" : "Suspendă"}
-                  </button>
-                  <button
-                    className="button button--dark button--inline"
-                    onClick={async () => {
-                      if (!supabase || !user.email) {
-                        setMessage("Acest cont nu are email disponibil.");
-                        return;
-                      }
-                      const result = await supabase.auth.resetPasswordForEmail(user.email);
-                      setMessage(result.error ? result.error.message : "Emailul de resetare a fost trimis.");
-                    }}
-                  >
-                    Reset
-                  </button>
+                  <div className="leaderboard-row__actions">
+                    <button
+                      className={getActionButtonClass("button button--ghost button--inline", `suspend-${user.user_id}`)}
+                      onClick={async () => {
+                        if (!supabase) {
+                          return;
+                        }
+                        const result = await supabase.rpc("admin_set_user_suspension", {
+                          target_user_id: user.user_id,
+                          suspended: !user.is_suspended,
+                        });
+                        if (result.error) {
+                          showActionError(result.error.message);
+                        } else {
+                          showActionSuccess(user.is_suspended ? "Cont reactivat." : "Cont suspendat.", `suspend-${user.user_id}`);
+                        }
+                        if (!result.error) {
+                          await loadData();
+                        }
+                      }}
+                    >
+                      {user.is_suspended ? "Reactivează" : "Suspendă"}
+                    </button>
+                    <button
+                      className={getActionButtonClass("button button--dark button--inline", `reset-${user.user_id}`)}
+                      onClick={async () => {
+                        if (!supabase || !user.email) {
+                          showActionError("Acest cont nu are email disponibil.");
+                          return;
+                        }
+                        const result = await supabase.auth.resetPasswordForEmail(user.email);
+                        if (result.error) {
+                          showActionError(result.error.message);
+                        } else {
+                          showActionSuccess("Emailul de resetare a fost trimis.", `reset-${user.user_id}`);
+                        }
+                      }}
+                    >
+                      Reset
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1177,7 +1335,7 @@ export default function CoachPanel() {
               </div>
             )}
 
-            <button className="button button--primary" onClick={saveSettings}>
+            <button className={getActionButtonClass("button button--primary button--fit", "save-settings")} onClick={saveSettings}>
               Salvează setările
             </button>
           </div>
