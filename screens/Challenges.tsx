@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { BadgePill, BottomNav, Icon } from "../components/ui";
+import { BottomNav, Icon } from "../components/ui";
 import { useAppState } from "../state/appState";
 
 export default function Challenges() {
@@ -79,18 +79,14 @@ export default function Challenges() {
 
               <p>{challenge.description}</p>
 
-              <div className="card-tag-row">
-                <span className="tag">{challenge.duration ?? "5-20 min"}</span>
-                <span className="tag">{challenge.target}</span>
-                <span className="tag">{challenge.rewardText}</span>
-              </div>
+              <p className="card__meta">
+                {challenge.duration ?? "5-20 min"} • {challenge.target} • {challenge.rewardText}
+              </p>
 
               <div className="coach-note">
                 <strong>Mesaj de coach</strong>
                 <p>{challenge.coachNote}</p>
               </div>
-
-              <BadgePill badge={challenge.badge} />
 
               <div className="task-card__actions">
                 <button

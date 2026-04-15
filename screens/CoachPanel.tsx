@@ -103,8 +103,7 @@ function nextDayKey() {
 }
 
 export default function CoachPanel() {
-  const { isAdmin, monthlyLeaderboard, player, regenerateDailyContent, refreshLeaderboard, weeklyLeaderboard } =
-    useAppState();
+  const { isAdmin, player, regenerateDailyContent, refreshLeaderboard, weeklyLeaderboard } = useAppState();
   const [section, setSection] = useState<AdminSection>("dashboard");
   const [message, setMessage] = useState("Panoul antrenorului este conectat live la academie.");
   const [dashboard, setDashboard] = useState<DashboardSnapshot>(defaultDashboard);
@@ -891,8 +890,8 @@ export default function CoachPanel() {
             <div className="card">
               <SectionTitle
                 eyebrow="Top academia"
-                title="Clasamente rapide"
-                subtitle="XP, consecvență și sesiuni finalizate."
+                title="Clasament rapid"
+                subtitle="Primele poziții din clasamentul săptămânal."
               />
               <div className="leaderboard-list">
                 {weeklyLeaderboard.slice(0, 5).map((entry) => (
@@ -901,15 +900,6 @@ export default function CoachPanel() {
                     <div className="leaderboard-row__player">
                       <strong>{entry.username}</strong>
                       <span>{entry.xp} XP săptămânal</span>
-                    </div>
-                  </div>
-                ))}
-                {monthlyLeaderboard.slice(0, 5).map((entry) => (
-                  <div key={`monthly-${entry.username}`} className="leaderboard-row">
-                    <strong className="leaderboard-row__rank">#{entry.rank}</strong>
-                    <div className="leaderboard-row__player">
-                      <strong>{entry.username}</strong>
-                      <span>{entry.xp} XP lunar</span>
                     </div>
                   </div>
                 ))}

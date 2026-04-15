@@ -1,5 +1,5 @@
 import { Navigate, useNavigate } from "react-router-dom";
-import { BadgePill, BottomNav, Icon, ProgressBar } from "../components/ui";
+import { BottomNav, Icon, ProgressBar } from "../components/ui";
 import { formatLongDate } from "../data/appData";
 import { useAppState } from "../state/appState";
 
@@ -77,19 +77,6 @@ export default function Profile() {
               <p>{player.role === "admin" ? "Admin" : "Jucător"}</p>
             </div>
           </div>
-        </div>
-
-        <div className="card">
-          <span className="card__eyebrow">Insigne câștigate</span>
-          {player.unlockedBadges.length > 0 ? (
-            <div className="badge-grid">
-              {player.unlockedBadges.map((badge) => (
-                <BadgePill key={badge.id} badge={badge} />
-              ))}
-            </div>
-          ) : (
-            <p className="empty-copy">Termină provocări și serii de antrenament pentru a debloca insigne speciale.</p>
-          )}
         </div>
 
         <div className="card">

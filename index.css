@@ -297,6 +297,13 @@ button {
   overflow-wrap: anywhere;
 }
 
+.card__meta {
+  margin: 2px 0 0;
+  color: #c9d7f2;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .section-title {
   display: grid;
   gap: 4px;
@@ -667,7 +674,12 @@ button {
 .task-card__actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.task-card__actions--roomy {
+  margin-top: 10px;
 }
 
 .coach-note {

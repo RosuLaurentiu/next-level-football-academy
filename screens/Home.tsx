@@ -98,14 +98,12 @@ export default function Home() {
           <p>{missionCopy}</p>
 
           {!coreModulesDone && (
-            <div className="card-tag-row">
-              <span className="tag">{nextTask.category}</span>
-              <span className="tag">{nextTask.duration}</span>
-              <span className="tag">{nextTask.xp} XP</span>
-            </div>
+            <p className="card__meta">
+              {nextTask.category} • {nextTask.duration} • {nextTask.xp} XP
+            </p>
           )}
 
-          <div className="task-card__actions">
+          <div className="task-card__actions task-card__actions--roomy">
             <button className="button button--primary" onClick={() => navigate("/training")}>
               {ctaLabel}
             </button>
@@ -162,11 +160,9 @@ export default function Home() {
             <span className="card__eyebrow">Provocarea focus</span>
             <h2>{nextChallenge.title}</h2>
             <p>{nextChallenge.description}</p>
-            <div className="card-tag-row">
-              <span className="tag">{nextChallenge.duration ?? "5-20 min"}</span>
-              <span className="tag">{nextChallenge.xp} XP</span>
-              <span className="tag">Nivel {nextChallenge.levelRequired}</span>
-            </div>
+            <p className="card__meta">
+              {nextChallenge.duration ?? "5-20 min"} • {nextChallenge.xp} XP • Nivel {nextChallenge.levelRequired}
+            </p>
             <button className="button button--secondary" onClick={() => navigate("/challenges")}>
               Intră în provocare
             </button>
