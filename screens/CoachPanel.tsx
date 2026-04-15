@@ -485,7 +485,7 @@ export default function CoachPanel() {
               </div>
             </div>
 
-            <div className="card">
+            <div className="card admin-card">
               <SectionTitle
                 eyebrow="Acțiuni rapide"
                 title="Controlul zilei"
@@ -521,7 +521,7 @@ export default function CoachPanel() {
               </div>
             </div>
 
-            <div className="card">
+            <div className="card admin-card">
               <SectionTitle
                 eyebrow="Top săptămânal"
                 title="Cine trage academia înainte"
@@ -544,7 +544,7 @@ export default function CoachPanel() {
 
         {section === "content" && (
           <>
-            <div className="card">
+            <div className="card admin-card">
               <SectionTitle
                 eyebrow="Module noi"
                 title="Creează un modul"
@@ -669,7 +669,7 @@ export default function CoachPanel() {
               </button>
             </div>
 
-            <div className="card">
+            <div className="card admin-card">
               <SectionTitle
                 eyebrow="Provocare nouă"
                 title="Adaugă o provocare"
@@ -766,7 +766,7 @@ export default function CoachPanel() {
               </button>
             </div>
 
-            <div className="card">
+            <div className="card admin-card">
               <SectionTitle
                 eyebrow="Conținut activ"
                 title="Module și provocări"
@@ -898,7 +898,7 @@ export default function CoachPanel() {
         )}
 
         {section === "schedule" && (
-          <div className="card">
+          <div className="card admin-card">
             <SectionTitle
               eyebrow="Program zilnic"
               title="Controlează ziua de antrenament"
@@ -1010,7 +1010,7 @@ export default function CoachPanel() {
 
         {section === "rankings" && (
           <>
-            <div className="card">
+            <div className="card admin-card">
               <SectionTitle
                 eyebrow="Top academia"
                 title="Clasament rapid"
@@ -1050,7 +1050,7 @@ export default function CoachPanel() {
               </button>
             </div>
 
-            <div className="card">
+            <div className="card admin-card">
               <SectionTitle
                 eyebrow="Intervenții"
                 title="Bonus și scoruri suspecte"
@@ -1132,7 +1132,7 @@ export default function CoachPanel() {
         )}
 
         {section === "users" && (
-          <div className="card">
+          <div className="card admin-card">
             <SectionTitle
               eyebrow="Jucători"
               title="Caută și administrează conturile"
@@ -1144,7 +1144,7 @@ export default function CoachPanel() {
                 <input className="input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nume sau email" />
               </label>
               <button
-                className={getActionButtonClass("button button--secondary", "refresh-users")}
+                className={`form-grid__full ${getActionButtonClass("button button--secondary", "refresh-users")}`}
                 onClick={async () => {
                   const loaded = await loadData(search);
                   if (loaded) {
@@ -1238,7 +1238,7 @@ export default function CoachPanel() {
         )}
 
         {section === "settings" && (
-          <div className="card">
+          <div className="card admin-card">
             <SectionTitle
               eyebrow="Setări academie"
               title="Păstrează doar ce contează"

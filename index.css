@@ -1506,6 +1506,32 @@ textarea.input {
   margin: 18px 0;
 }
 
+.admin-card {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.admin-card > .section-title {
+  margin-bottom: 0;
+}
+
+.admin-card > .button,
+.admin-card > .task-card__actions,
+.admin-card > .leaderboard-list,
+.admin-card > .form-grid,
+.admin-card > .admin-help,
+.admin-card > .admin-settings-grid,
+.admin-card > .admin-toggle,
+.admin-card > .empty-copy {
+  margin: 0;
+}
+
+.admin-card > .button,
+.admin-card .form-grid__full.button {
+  width: 100%;
+}
+
 .segment-control--admin {
   margin-bottom: 2px;
 }
