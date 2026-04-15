@@ -664,7 +664,7 @@ export default function CoachPanel() {
                   />
                 </label>
               </div>
-              <button className={getActionButtonClass("button button--primary button--fit", "create-module")} onClick={createModule}>
+              <button className={getActionButtonClass("button button--primary", "create-module")} onClick={createModule}>
                 Salvează modulul
               </button>
             </div>
@@ -761,7 +761,7 @@ export default function CoachPanel() {
                   />
                 </label>
               </div>
-              <button className={getActionButtonClass("button button--secondary button--fit", "create-challenge")} onClick={createChallenge}>
+              <button className={getActionButtonClass("button button--secondary", "create-challenge")} onClick={createChallenge}>
                 Salvează provocarea
               </button>
             </div>
@@ -981,7 +981,7 @@ export default function CoachPanel() {
               </button>
             </div>
             <button
-              className={getActionButtonClass("button button--ghost button--fit", "preview-tomorrow")}
+              className={getActionButtonClass("button button--ghost", "preview-tomorrow")}
               onClick={async () => {
                 if (!supabase) {
                   return;
@@ -1070,7 +1070,7 @@ export default function CoachPanel() {
                 </label>
               </div>
               <button
-                className={getActionButtonClass("button button--primary button--fit", "award-bonus")}
+                className={getActionButtonClass("button button--primary", "award-bonus")}
                 onClick={async () => {
                   if (!supabase || !bonusUserId) {
                     showActionError("Alege jucătorul pentru bonus.");
@@ -1103,7 +1103,7 @@ export default function CoachPanel() {
                   </select>
                 </label>
                 <button
-                  className={getActionButtonClass("button button--dark button--fit", "remove-fraud")}
+                  className={getActionButtonClass("button button--dark", "remove-fraud")}
                   onClick={async () => {
                     if (!supabase || !fraudUserId) {
                       showActionError("Alege jucătorul verificat.");
@@ -1144,7 +1144,7 @@ export default function CoachPanel() {
                 <input className="input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nume sau email" />
               </label>
               <button
-                className={getActionButtonClass("button button--secondary button--fit", "refresh-users")}
+                className={getActionButtonClass("button button--secondary", "refresh-users")}
                 onClick={async () => {
                   const loaded = await loadData(search);
                   if (loaded) {
@@ -1335,7 +1335,7 @@ export default function CoachPanel() {
               </div>
             )}
 
-            <button className={getActionButtonClass("button button--primary button--fit", "save-settings")} onClick={saveSettings}>
+            <button className={getActionButtonClass("button button--primary", "save-settings")} onClick={saveSettings}>
               Salvează setările
             </button>
           </div>
