@@ -1,11 +1,3 @@
-export interface AvatarOption {
-  id: string;
-  label: string;
-  initials: string;
-  accent: string;
-  glow: string;
-}
-
 export interface Badge {
   id: string;
   label: string;
@@ -75,7 +67,6 @@ export interface PlayerProfile {
   userId?: string;
   username: string;
   email?: string | null;
-  avatarId: string;
   role?: "player" | "admin";
   isSuspended?: boolean;
   totalXp: number;
@@ -90,7 +81,6 @@ export interface PlayerProfile {
 export interface StoredUser {
   username: string;
   password: string;
-  avatarId: string;
 }
 
 export interface StoredAppState {
@@ -113,7 +103,6 @@ export interface RankedPlayer {
   rank: number;
   userId?: string;
   username: string;
-  avatarId: string;
   xp: number;
   level: number;
   streak: number;
@@ -124,7 +113,6 @@ export interface RankedPlayer {
 export interface LeaderboardProfileSnapshot {
   userId: string;
   username: string;
-  avatarId: string;
   totalXp: number;
   trainingLog: TrainingLogEntry[];
   challengeLog: ChallengeLogEntry[];

@@ -1,5 +1,4 @@
 import type {
-  AvatarOption,
   Badge,
   Challenge,
   LeaderboardProfileSnapshot,
@@ -20,13 +19,6 @@ export const STREAK_BONUS_XP = {
   7: 120,
   14: 260,
 } as const;
-
-export const AVATARS: AvatarOption[] = [
-  { id: "rocket", label: "Rachetă", initials: "RK", accent: "orange", glow: "#ff9a1f" },
-  { id: "falcon", label: "Șoim", initials: "FC", accent: "green", glow: "#18c67b" },
-  { id: "storm", label: "Furtună", initials: "ST", accent: "blue", glow: "#2c6bff" },
-  { id: "lion", label: "Leu", initials: "LN", accent: "gold", glow: "#ffc629" },
-];
 
 export const LEVELS = [
   { level: 1, title: "Începător", minXp: 0, nextXp: 120 },
@@ -49,7 +41,7 @@ export const LEVELS = [
   { level: 18, title: "Stea în ascensiune", minXp: 9880, nextXp: 11000 },
   { level: 19, title: "Dominant pe teren", minXp: 11000, nextXp: 12180 },
   { level: 20, title: "Elite Academy Player", minXp: 12180, nextXp: null },
-];
+] as const;
 
 function createMentalTask(
   id: string,
@@ -388,34 +380,30 @@ export const BASE_CHALLENGES: Challenge[] = [
 ];
 
 const WEEKLY_RIVALS = [
-  { username: "Mila", avatarId: "lion", xp: 190, streak: 6 },
-  { username: "Noah", avatarId: "storm", xp: 175, streak: 5 },
-  { username: "Ava", avatarId: "rocket", xp: 168, streak: 4 },
-  { username: "Leo", avatarId: "falcon", xp: 160, streak: 3 },
-  { username: "Zara", avatarId: "lion", xp: 154, streak: 5 },
-  { username: "Owen", avatarId: "storm", xp: 148, streak: 4 },
-  { username: "Sofia", avatarId: "rocket", xp: 142, streak: 2 },
-  { username: "Eli", avatarId: "falcon", xp: 135, streak: 4 },
-  { username: "Ruby", avatarId: "lion", xp: 128, streak: 3 },
-  { username: "Kai", avatarId: "rocket", xp: 121, streak: 2 },
+  { username: "Mila", xp: 190, streak: 6 },
+  { username: "Noah", xp: 175, streak: 5 },
+  { username: "Ava", xp: 168, streak: 4 },
+  { username: "Leo", xp: 160, streak: 3 },
+  { username: "Zara", xp: 154, streak: 5 },
+  { username: "Owen", xp: 148, streak: 4 },
+  { username: "Sofia", xp: 142, streak: 2 },
+  { username: "Eli", xp: 135, streak: 4 },
+  { username: "Ruby", xp: 128, streak: 3 },
+  { username: "Kai", xp: 121, streak: 2 },
 ];
 
 const MONTHLY_RIVALS = [
-  { username: "Mila", avatarId: "lion", xp: 1180, streak: 12 },
-  { username: "Noah", avatarId: "storm", xp: 1105, streak: 10 },
-  { username: "Ava", avatarId: "rocket", xp: 1020, streak: 9 },
-  { username: "Leo", avatarId: "falcon", xp: 950, streak: 8 },
-  { username: "Zara", avatarId: "lion", xp: 920, streak: 8 },
-  { username: "Owen", avatarId: "storm", xp: 880, streak: 7 },
-  { username: "Sofia", avatarId: "rocket", xp: 835, streak: 6 },
-  { username: "Eli", avatarId: "falcon", xp: 790, streak: 7 },
-  { username: "Ruby", avatarId: "lion", xp: 760, streak: 5 },
-  { username: "Kai", avatarId: "rocket", xp: 715, streak: 4 },
+  { username: "Mila", xp: 1180, streak: 12 },
+  { username: "Noah", xp: 1105, streak: 10 },
+  { username: "Ava", xp: 1020, streak: 9 },
+  { username: "Leo", xp: 950, streak: 8 },
+  { username: "Zara", xp: 920, streak: 8 },
+  { username: "Owen", xp: 880, streak: 7 },
+  { username: "Sofia", xp: 835, streak: 6 },
+  { username: "Eli", xp: 790, streak: 7 },
+  { username: "Ruby", xp: 760, streak: 5 },
+  { username: "Kai", xp: 715, streak: 4 },
 ];
-
-export function getAvatarOption(avatarId: string): AvatarOption {
-  return AVATARS.find((avatar) => avatar.id === avatarId) ?? AVATARS[0];
-}
 
 export function getTodayKey(date: Date = new Date()): string {
   const year = date.getFullYear();
@@ -559,7 +547,6 @@ export function createStarterStore(): StoredAppState {
   const demoProfile: PlayerProfile = {
     username: "sam10",
     email: "sam10@example.com",
-    avatarId: "rocket",
     role: "admin",
     isSuspended: false,
     totalXp: 150,
@@ -587,7 +574,7 @@ export function createStarterStore(): StoredAppState {
   };
 
   return {
-    users: [{ username: "sam10", password: "academy", avatarId: "rocket" }],
+    users: [{ username: "sam10", password: "academy" }],
     profiles: { sam10: demoProfile },
     quotes: DEFAULT_QUOTES,
     customChallenges: [],
@@ -595,10 +582,9 @@ export function createStarterStore(): StoredAppState {
   };
 }
 
-export function createPlayerProfile(username: string, avatarId: string): PlayerProfile {
+export function createPlayerProfile(username: string): PlayerProfile {
   return {
     username,
-    avatarId,
     role: "player",
     isSuspended: false,
     totalXp: 0,
@@ -618,11 +604,12 @@ export function buildLeaderboard(
   leaderboardSeed: number,
 ): { topTen: RankedPlayer[]; currentUser: RankedPlayer } {
   const basePlayers = mode === "monthly" ? MONTHLY_RIVALS : WEEKLY_RIVALS;
-  const userXp = mode === "daily"
-    ? calculateRecentXp(profile, 1, todayKey)
-    : mode === "weekly"
-      ? calculateRecentXp(profile, 7, todayKey)
-      : profile.totalXp;
+  const userXp =
+    mode === "daily"
+      ? calculateRecentXp(profile, 1, todayKey)
+      : mode === "weekly"
+        ? calculateRecentXp(profile, 7, todayKey)
+        : profile.totalXp;
   const userLevel = getLevelInfo(profile.totalXp).level;
   const userStreak = calculateStreak(profile.trainingLog, todayKey);
   const userCompletedTrainings = calculateCompletedTrainings(
@@ -635,15 +622,15 @@ export function buildLeaderboard(
   const seededPlayers = basePlayers.map((player, index) => {
     const offset = (leaderboardSeed * 17 + index * 9) % offsetRange;
     const xp = player.xp + offset;
-    const completedTrainings = mode === "daily"
-      ? Math.max(0, Math.min(1, Math.round((player.streak + index) % 2)))
-      : mode === "weekly"
-        ? Math.max(1, Math.min(7, player.streak + (index % 3)))
-        : Math.max(3, Math.min(28, player.streak * 2 + (index % 6)));
+    const completedTrainings =
+      mode === "daily"
+        ? Math.max(0, Math.min(1, Math.round((player.streak + index) % 2)))
+        : mode === "weekly"
+          ? Math.max(1, Math.min(7, player.streak + (index % 3)))
+          : Math.max(3, Math.min(28, player.streak * 2 + (index % 6)));
 
     return {
       username: player.username,
-      avatarId: player.avatarId,
       xp,
       level: getLevelInfo(xp).level,
       streak: player.streak,
@@ -656,7 +643,6 @@ export function buildLeaderboard(
     ...seededPlayers,
     {
       username: profile.username,
-      avatarId: profile.avatarId,
       xp: userXp,
       level: userLevel,
       streak: userStreak,
@@ -697,7 +683,6 @@ export function buildLeaderboardFromSnapshots(
       const snapshotProfile: PlayerProfile = {
         userId: snapshot.userId,
         username: snapshot.username,
-        avatarId: snapshot.avatarId,
         totalXp: snapshot.totalXp,
         completedChallengeIds: [],
         trainingLog: snapshot.trainingLog,
@@ -706,11 +691,13 @@ export function buildLeaderboardFromSnapshots(
         consistencyRewardMilestones: [],
         createdAt: todayKey,
       };
-      const xp = mode === "daily"
-        ? calculateRecentXp(snapshotProfile, 1, todayKey)
-        : mode === "weekly"
-          ? calculateRecentXp(snapshotProfile, 7, todayKey)
-          : snapshot.totalXp;
+
+      const xp =
+        mode === "daily"
+          ? calculateRecentXp(snapshotProfile, 1, todayKey)
+          : mode === "weekly"
+            ? calculateRecentXp(snapshotProfile, 7, todayKey)
+            : snapshot.totalXp;
       const completedTrainings = calculateCompletedTrainings(
         snapshot.trainingLog,
         todayKey,
@@ -720,7 +707,6 @@ export function buildLeaderboardFromSnapshots(
       return {
         userId: snapshot.userId,
         username: snapshot.username,
-        avatarId: snapshot.avatarId,
         xp,
         level: getLevelInfo(snapshot.totalXp).level,
         streak: calculateStreak(snapshot.trainingLog, todayKey),

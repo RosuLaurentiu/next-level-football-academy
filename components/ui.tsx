@@ -1,5 +1,4 @@
 import { NavLink } from "react-router-dom";
-import { getAvatarOption } from "../data/appData";
 import { useAppState } from "../state/appState";
 import type { Badge } from "../data/types";
 
@@ -94,7 +93,14 @@ export function Icon({ name, className }: { name: IconName; className?: string }
     case "check":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={baseClassName}>
-          <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+          <path
+            d="m5 12 4 4 10-10"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2.5"
+          />
         </svg>
       );
     case "lock":
@@ -130,22 +136,6 @@ export function ProgressBar({ value, label }: { value: number; label: string }) 
       <div className="progress-track" aria-hidden="true">
         <div className="progress-fill" style={{ width: `${value}%` }} />
       </div>
-    </div>
-  );
-}
-
-export function AvatarBadge({
-  avatarId,
-  size = "medium",
-}: {
-  avatarId: string;
-  size?: "small" | "medium" | "large";
-}) {
-  const avatar = getAvatarOption(avatarId);
-
-  return (
-    <div className={joinClasses("avatar-badge", `avatar-badge--${size}`, `avatar-badge--${avatar.accent}`)}>
-      <span>{avatar.initials}</span>
     </div>
   );
 }

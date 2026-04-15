@@ -1,5 +1,5 @@
 import { Navigate, useNavigate } from "react-router-dom";
-import { AvatarBadge, BadgePill, BottomNav, Icon, ProgressBar } from "../components/ui";
+import { BadgePill, BottomNav, Icon, ProgressBar } from "../components/ui";
 import { formatLongDate } from "../data/appData";
 import { useAppState } from "../state/appState";
 
@@ -19,8 +19,10 @@ export default function Profile() {
   return (
     <div className="screen">
       <section className="hero-card hero-card--profile">
-        <AvatarBadge avatarId={player.avatarId} size="large" />
-        <span className="hero-card__eyebrow">ACADEMY PROFILE</span>
+        <div className="hero-card__icon-wrap">
+          <Icon name="profile" className="hero-card__icon" />
+        </div>
+        <span className="hero-card__eyebrow">PROFILUL TĂU</span>
         <h1>{player.username}</h1>
         <p>
           Nivel {levelInfo.level} | {levelInfo.title}
@@ -45,7 +47,7 @@ export default function Profile() {
           <div className="metric-card">
             <span>Serie</span>
             <strong>{streakDays}</strong>
-            <small>Rămâi constant</small>
+            <small>Zile consecutive</small>
           </div>
           <div className="metric-card">
             <span>Sesiuni</span>
@@ -71,8 +73,8 @@ export default function Profile() {
               <p>{levelInfo.title}</p>
             </div>
             <div>
-              <strong>Avatar</strong>
-              <p>{player.avatarId}</p>
+              <strong>Status</strong>
+              <p>{player.role === "admin" ? "Admin" : "Jucător"}</p>
             </div>
           </div>
         </div>

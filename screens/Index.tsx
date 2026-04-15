@@ -13,7 +13,7 @@ export default function Index() {
           <div className="hero-card__icon-wrap">
             <Icon name="ball" className="hero-card__icon" />
           </div>
-          <span className="hero-card__eyebrow">NEXT LEVEL FOOTBALL ACADEMY</span>
+          <span className="hero-card__eyebrow">ACADEMIA SE PREGĂTEȘTE</span>
           <h1>Se pregateste academia</h1>
           <p>
             {usesSupabase

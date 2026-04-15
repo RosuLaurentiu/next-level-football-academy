@@ -37,10 +37,10 @@ export default function Home() {
   const xpToNextLevel = levelInfo.nextXp ? Math.max(0, levelInfo.nextXp - player.totalXp) : 0;
   const missionTitle = coreModulesDone ? "Antrenamentul de azi este gata!" : nextTask.title;
   const missionCopy = coreModulesDone
-    ? "Progres real. Misiunea de mâine se pregătește deja."
+    ? "Progres real. Misiunea de mâine se pregătește."
     : completedModules === 0
       ? "Mental, fizic, tehnic. În ordinea academiei."
-      : "Mai ai puțin. Termină sesiunea și păstrează seria.";
+      : "Mai ai puțin. Închide ziua și păstrează seria.";
   const ctaLabel = coreModulesDone
     ? "Vezi antrenamentul"
     : completedModules === 0
@@ -55,7 +55,7 @@ export default function Home() {
       <section className="hero-card">
         <div className="hero-card__top">
           <div>
-            <span className="hero-card__eyebrow">NEXT LEVEL FOOTBALL ACADEMY</span>
+            <span className="hero-card__eyebrow">ACADEMIA TA</span>
             <h1>{player.username}</h1>
             <p>{formatLongDate(todayKey)}</p>
           </div>
@@ -110,7 +110,7 @@ export default function Home() {
               {ctaLabel}
             </button>
             <button className="button button--ghost" onClick={() => navigate("/leaderboard")}>
-              Vezi clasamentul
+              Clasament
             </button>
           </div>
         </div>
@@ -143,8 +143,8 @@ export default function Home() {
         <div className="action-grid">
           <button className="action-card" onClick={() => navigate("/training")}>
             <Icon name="training" className="action-card__icon" />
-            <strong>Baza ta de antrenament</strong>
-            <span>{completedModules} din {totalModules} module finalizate</span>
+            <strong>Antrenament</strong>
+            <span>{completedModules} din {totalModules} module gata</span>
             <div className="mini-track">
               <div className="mini-track__fill" style={{ width: `${sessionProgress}%` }} />
             </div>
@@ -152,8 +152,8 @@ export default function Home() {
 
           <button className="action-card action-card--warm" onClick={() => navigate("/challenges")}>
             <Icon name="trophy" className="action-card__icon" />
-            <strong>Zona provocărilor</strong>
-            <span>{player.completedChallengeIds.length} provocări validate până acum</span>
+            <strong>Provocări</strong>
+            <span>{player.completedChallengeIds.length} provocări validate</span>
           </button>
         </div>
 

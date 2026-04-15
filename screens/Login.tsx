@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AvatarBadge, Icon } from "../components/ui";
-import { AVATARS } from "../data/appData";
+import { Icon } from "../components/ui";
 import { useAppState } from "../state/appState";
 
 export default function Login() {
@@ -12,7 +11,6 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [avatarId, setAvatarId] = useState(AVATARS[0].id);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("Progresul vine doar după antrenament real.");
 
@@ -21,7 +19,7 @@ export default function Login() {
     const result =
       mode === "login"
         ? await login(identifier, password)
-        : await signUp(username, password, avatarId, email);
+        : await signUp(username, password, email);
     setSubmitting(false);
     setMessage(result.message);
 
@@ -45,9 +43,9 @@ export default function Login() {
         </div>
 
         <div className="login-hero__content">
-          <span className="hero-card__eyebrow">NEXT LEVEL FOOTBALL ACADEMY</span>
+          <span className="hero-card__eyebrow">BINE AI VENIT ÎN ACADEMIE</span>
           <h1>Intră în academie.</h1>
-          <p>Mai mult control. Mai multă disciplină. Progres real.</p>
+          <p>Un sistem clar. Un progres real. O experiență mai curată.</p>
         </div>
       </section>
 
@@ -68,9 +66,9 @@ export default function Login() {
 
       <div className="card login-card">
         <div className="login-card__intro">
-          <span className="card__eyebrow">{mode === "login" ? "Bine ai revenit" : "Profil nou"}</span>
-          <h2>{mode === "login" ? "Continuă antrenamentul" : "Pornește aventura"}</h2>
-          <p>{mode === "login" ? "Intră și urcă nivelul." : "Creează-ți profilul de jucător."}</p>
+          <span className="card__eyebrow">{mode === "login" ? "Acces jucător" : "Cont nou"}</span>
+          <h2>{mode === "login" ? "Continuă antrenamentul" : "Intră în program"}</h2>
+          <p>{mode === "login" ? "Autentificare rapidă și clară." : "Ai nevoie doar de nume, email și parolă."}</p>
         </div>
 
         <div className="form-grid">
@@ -123,26 +121,7 @@ export default function Login() {
             />
           </label>
 
-          {mode === "signup" && (
-            <div className="avatar-picker">
-              <span className="label">Alege avatarul</span>
-              <div className="avatar-picker__grid">
-                {AVATARS.map((avatar) => (
-                  <button
-                    key={avatar.id}
-                    type="button"
-                    className={avatarId === avatar.id ? "avatar-option avatar-option--active" : "avatar-option"}
-                    onClick={() => setAvatarId(avatar.id)}
-                  >
-                    <AvatarBadge avatarId={avatar.id} size="small" />
-                    <span>{avatar.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {usesSupabase && <p className="login-note">Progres live sincronizat între dispozitive.</p>}
+          {usesSupabase && <p className="login-note">Progresul tău este sincronizat live.</p>}
 
           <button
             className="button button--primary button--large"

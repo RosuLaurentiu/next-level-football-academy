@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { AvatarBadge, BottomNav, Icon } from "../components/ui";
+import { BottomNav, Icon } from "../components/ui";
 import { useAppState } from "../state/appState";
 
 export default function Leaderboard() {
@@ -29,7 +29,7 @@ export default function Leaderboard() {
   return (
     <div className="screen">
       <section className="hero-card hero-card--leaderboard">
-        <span className="hero-card__eyebrow">ACADEMY LEADERBOARD</span>
+        <span className="hero-card__eyebrow">CLASAMENTUL ACADEMIEI</span>
         <h1>Urcă în top.</h1>
         <p>XP-ul, seria și constanța te duc în față.</p>
 
@@ -86,11 +86,11 @@ export default function Leaderboard() {
                   key={entry.username}
                   className={index === 0 ? "podium__item podium__item--first" : "podium__item"}
                 >
-                  <AvatarBadge avatarId={entry.avatarId} size={index === 0 ? "large" : "medium"} />
+                  <div className={`podium__medal podium__medal--${index + 1}`}>#{entry.rank}</div>
                   <strong>{entry.username}</strong>
                   <span>{entry.xp} XP</span>
                   <div className={`podium__stand podium__stand--${index + 1}`}>
-                    <span>#{entry.rank}</span>
+                    <span>Nivel {entry.level}</span>
                   </div>
                 </div>
               ))}
@@ -105,7 +105,6 @@ export default function Leaderboard() {
               className={entry.isCurrentUser ? "leaderboard-row leaderboard-row--active" : "leaderboard-row"}
             >
               <strong className="leaderboard-row__rank">#{entry.rank}</strong>
-              <AvatarBadge avatarId={entry.avatarId} size="small" />
               <div className="leaderboard-row__player">
                 <strong>{entry.username}</strong>
                 <span>Nivel {entry.level} | Serie {entry.streak} | {entry.completedTrainings} sesiuni</span>

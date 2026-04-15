@@ -34,7 +34,6 @@ interface ProfileRow {
   user_id: string;
   username: string;
   email: string | null;
-  avatar_id: string;
   role: "player" | "admin";
   is_suspended: boolean;
   total_xp: number;
@@ -46,7 +45,6 @@ interface ProfileRow {
 interface LeaderboardProfileRow {
   user_id: string;
   username: string;
-  avatar_id: string;
   total_xp: number;
 }
 
@@ -292,7 +290,6 @@ function buildLeaderboardSnapshots(
   return profiles.map((profile) => ({
     userId: profile.user_id,
     username: profile.username,
-    avatarId: profile.avatar_id,
     totalXp: profile.total_xp,
     trainingLog: trainingByUser.get(profile.user_id) ?? [],
     challengeLog: challengeByUser.get(profile.user_id) ?? [],
@@ -317,7 +314,6 @@ function mapProfile(
     userId: profile.user_id,
     username: profile.username,
     email: profile.email,
-    avatarId: profile.avatar_id,
     role: profile.role,
     isSuspended: profile.is_suspended,
     totalXp: profile.total_xp,
@@ -350,7 +346,7 @@ async function fetchRemoteSnapshot(userId: string, todayKey: string) {
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("user_id, username, email, avatar_id, role, is_suspended, total_xp, unlocked_badges, consistency_reward_milestones, created_at")
+      .select("user_id, username, email, role, is_suspended, total_xp, unlocked_badges, consistency_reward_milestones, created_at")
       .eq("user_id", userId)
       .single<ProfileRow>(),
     supabase
@@ -378,7 +374,7 @@ async function fetchRemoteSnapshot(userId: string, todayKey: string) {
       .returns<CoachChallengeRow[]>(),
     supabase
       .from("profiles")
-      .select("user_id, username, avatar_id, total_xp")
+      .select("user_id, username, total_xp")
       .returns<LeaderboardProfileRow[]>(),
     supabase
       .from("training_completions")
@@ -675,7 +671,7 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
     return { ok: true, message: "Bine ai revenit, campionule! Lumea ta de antrenament este pregătită." };
   };
 
-  const signUp = async (username: string, password: string, avatarId: string, email?: string) => {
+  const signUp = async (username: string, password: string, email?: string) => {
     if (!supabase) {
       return { ok: false, message: "Supabase nu este configurat." };
     }
@@ -701,7 +697,6 @@ export function SupabaseAppStateProvider({ children }: { children: ReactNode }) 
       options: {
         data: {
           username: cleanUsername,
-          avatar_id: avatarId,
         },
       },
     });

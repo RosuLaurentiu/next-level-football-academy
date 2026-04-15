@@ -29,7 +29,7 @@ export default function Challenges() {
   return (
     <div className="screen">
       <section className="hero-card hero-card--challenge">
-        <span className="hero-card__eyebrow">NEXT LEVEL CHALLENGES</span>
+        <span className="hero-card__eyebrow">PROVOCĂRI ACADEMIE</span>
         <h1>Intră în duel cu tine.</h1>
         <p>Scor clar. XP real. Insigne câștigate prin muncă.</p>
       </section>

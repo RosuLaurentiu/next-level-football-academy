@@ -40,7 +40,6 @@ export interface AppStateContextValue {
   signUp: (
     username: string,
     password: string,
-    avatarId: string,
     email?: string,
   ) => Promise<ActionResult>;
   logout: () => Promise<void>;

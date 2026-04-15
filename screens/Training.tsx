@@ -41,22 +41,6 @@ function getEmbedUrl(url?: string, autoplay = false): string | null {
   return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&playsinline=1&enablejsapi=1&autoplay=${autoplay ? "1" : "0"}`;
 }
 
-function getModuleStateLabel(task: TrainingTask, completed: boolean) {
-  if (completed) {
-    return "Finalizat";
-  }
-
-  if (task.category === "Mental") {
-    return "Focus de academie";
-  }
-
-  if (task.category === "Fizic") {
-    return "Motor activ";
-  }
-
-  return "Control premium";
-}
-
 function postYouTubeCommand(iframe: HTMLIFrameElement | null, command: "playVideo" | "pauseVideo") {
   if (!iframe?.contentWindow) {
     return;
@@ -271,7 +255,7 @@ export default function Training() {
   return (
     <div className="screen">
       <section className="hero-card hero-card--training">
-        <span className="hero-card__eyebrow">TRAINING CENTER</span>
+        <span className="hero-card__eyebrow">ANTRENAMENTUL ZILEI</span>
         <h1>Antrenamentul de azi</h1>
         <p>{todayPlan.title}. Mental, fizic, tehnic. Apoi bonus.</p>
 
@@ -314,10 +298,10 @@ export default function Training() {
           <div className="metric-card">
             <span>Favorite</span>
             <strong>{favoriteIds.length}</strong>
-            <small>Module salvate</small>
+            <small>Salvate pentru mai târziu</small>
           </div>
           <div className="metric-card">
-            <span>Bonus sesiune</span>
+            <span>Bonus</span>
             <strong>{sessionBonusEarned ? "Da" : "Nu"}</strong>
             <small>{SESSION_BONUS_XP} XP extra</small>
           </div>
@@ -344,15 +328,14 @@ export default function Training() {
                 <span className="tag">{task.duration}</span>
                 <span className="tag">{task.focus}</span>
                 <span className="tag">{stepCount} pași</span>
-                <span className="tag">{getModuleStateLabel(task, completed)}</span>
               </div>
 
               <div className="task-card__actions">
                 <button className="button button--primary" onClick={() => openTrainingModal(task, "today")}>
-                  Deschide modulul
+                  Intră în modul
                 </button>
                 <button className="button button--ghost" onClick={() => toggleFavorite(task.id)}>
-                  {isFavorite ? "Scoate din favorite" : "Adaugă la favorite"}
+                  {isFavorite ? "Din favorite" : "Salvează"}
                 </button>
               </div>
             </div>
@@ -422,7 +405,7 @@ export default function Training() {
         {uniqueHistory.length > 0 ? (
           <div className="card">
             <span className="card__eyebrow">Istoric</span>
-            <h2>Revezi module finalizate</h2>
+            <h2>Revezi modulele</h2>
 
             <div className="leaderboard-list">
               {uniqueHistory.slice(0, 6).map((entry) => (
@@ -451,7 +434,7 @@ export default function Training() {
           <div className="truth-row">
             <Icon name="bolt" className="truth-row__icon" />
             <p>
-              Termină cele 3 module de bază pentru bonusul complet de {SESSION_BONUS_XP} XP.
+              Termină cele 3 module de bază pentru bonusul de {SESSION_BONUS_XP} XP.
               {sessionBonusEarned ? " Bonusul este deja în cont." : ""}
             </p>
           </div>
@@ -459,7 +442,7 @@ export default function Training() {
 
         {coreModulesDone && (
           <div className="card card--highlight celebration-card">
-            <span className="card__eyebrow">ACADEMY STATUS</span>
+            <span className="card__eyebrow">ZIUA E ÎNCHISĂ</span>
             <h2>Antrenamentul de azi este gata!</h2>
             <p>Progres real. Revii mâine și continui să crești.</p>
           </div>
@@ -515,10 +498,10 @@ export default function Training() {
 
                 <div className="training-modal__actions">
                   <button className="button button--secondary" onClick={handleReplay}>
-                    Repetă video
+                    Reia video
                   </button>
                   <button className="button button--ghost" onClick={handlePauseResume}>
-                    {videoPaused ? "Reia video" : "Pauză video"}
+                    {videoPaused ? "Continuă" : "Pauză"}
                   </button>
                   {activeStepIndex < steps.length - 1 ? (
                     <button className="button button--dark" onClick={goToNextStep}>

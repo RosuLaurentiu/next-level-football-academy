@@ -34,7 +34,6 @@ function readStoredState(): StoredAppState {
   }
 
   const rawState = window.localStorage.getItem(STORAGE_KEY);
-
   if (!rawState) {
     return createStarterStore();
   }
@@ -76,7 +75,10 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
   const todayCompletedTaskIds = player
     ? player.trainingLog
         .filter(
-          (entry) => entry.dateKey === todayKey && entry.taskId !== "session-bonus" && !entry.taskId.startsWith("consistency-"),
+          (entry) =>
+            entry.dateKey === todayKey &&
+            entry.taskId !== "session-bonus" &&
+            !entry.taskId.startsWith("consistency-"),
         )
         .map((entry) => entry.taskId)
     : [];
@@ -84,11 +86,14 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
   const isAdmin = player?.role === "admin";
   const streakDays = player ? calculateStreak(player.trainingLog, todayKey) : 0;
   const allChallenges = useMemo(() => [...BASE_CHALLENGES, ...store.customChallenges], [store.customChallenges]);
-  const todayChallenge = allChallenges.find(
-    (challenge) =>
-      challenge.levelRequired <= levelInfo.level &&
-      !player?.completedChallengeIds.includes(challenge.id),
-  ) ?? allChallenges.find((challenge) => challenge.levelRequired <= levelInfo.level) ?? null;
+  const todayChallenge =
+    allChallenges.find(
+      (challenge) =>
+        challenge.levelRequired <= levelInfo.level &&
+        !player?.completedChallengeIds.includes(challenge.id),
+    ) ??
+    allChallenges.find((challenge) => challenge.levelRequired <= levelInfo.level) ??
+    null;
   const todayQuote = getQuoteOfTheDay(store.quotes, todayKey);
   const weeklyRankings = player ? buildLeaderboard("weekly", player, todayKey, store.leaderboardSeed) : null;
   const monthlyRankings = player ? buildLeaderboard("monthly", player, todayKey, store.leaderboardSeed) : null;
@@ -99,14 +104,17 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
     const account = store.users.find((user) => normaliseUsername(user.username) === cleanUsername);
 
     if (!account || account.password !== password) {
-      return { ok: false, message: "Acest nume de utilizator și această parolă nu se potrivesc cu fișa noastră de antrenament." };
+      return {
+        ok: false,
+        message: "Acest nume de utilizator și această parolă nu se potrivesc cu fișa noastră de antrenament.",
+      };
     }
 
     setCurrentUsername(account.username);
     return { ok: true, message: "Bine ai revenit, campionule! Lumea ta de antrenament este pregătită." };
   };
 
-  const signUp = async (username: string, password: string, avatarId: string) => {
+  const signUp = async (username: string, password: string, _email?: string) => {
     const cleanUsername = username.trim();
 
     if (cleanUsername.length < 2) {
@@ -125,10 +133,10 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       return { ok: false, message: "Acest nume de jucător este deja pe foaia de echipă." };
     }
 
-    const profile = createPlayerProfile(cleanUsername, avatarId);
+    const profile = createPlayerProfile(cleanUsername);
     setStore((currentStore) => ({
       ...currentStore,
-      users: [...currentStore.users, { username: cleanUsername, password, avatarId }],
+      users: [...currentStore.users, { username: cleanUsername, password }],
       profiles: { ...currentStore.profiles, [cleanUsername]: profile },
     }));
     setCurrentUsername(cleanUsername);
@@ -150,9 +158,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       return { ok: false, message: "Acest exercițiu nu este în planul de azi." };
     }
 
-    const alreadyDone = player.trainingLog.some(
-      (entry) => entry.dateKey === todayKey && entry.taskId === taskId,
-    );
+    const alreadyDone = player.trainingLog.some((entry) => entry.dateKey === todayKey && entry.taskId === taskId);
     if (alreadyDone) {
       return { ok: false, message: "Acest exercițiu este deja finalizat azi." };
     }
@@ -215,10 +221,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
           updatedProfile = {
             ...updatedProfile,
             totalXp: updatedProfile.totalXp + streakBonusXp,
-            consistencyRewardMilestones: [
-              ...updatedProfile.consistencyRewardMilestones,
-              streakTarget,
-            ],
+            consistencyRewardMilestones: [...updatedProfile.consistencyRewardMilestones, streakTarget],
             trainingLog: [
               ...updatedProfile.trainingLog,
               {
@@ -333,7 +336,7 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
   const regenerateDailyContent = async () => {
     return {
       ok: false,
-      message: "Generarea zilnica automata este disponibila doar in modul Supabase.",
+      message: "Generarea zilnică automată este disponibilă doar în modul Supabase.",
     };
   };
 
@@ -375,8 +378,8 @@ export function LocalAppStateProvider({ children }: { children: ReactNode }) {
       player,
       streakDays,
       todayCompletedTaskIds,
-      todayKey,
       todayChallenge,
+      todayKey,
       todayPlan,
       todayQuote,
       weeklyRankings,

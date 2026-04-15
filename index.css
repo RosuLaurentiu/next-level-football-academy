@@ -573,28 +573,6 @@ button {
   background: linear-gradient(135deg, var(--navy), #1b3270);
 }
 
-.avatar-picker {
-  display: grid;
-  gap: 10px;
-}
-
-.avatar-picker__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.avatar-option {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 10px 12px;
-  border-radius: 18px;
-  background: rgba(245, 249, 255, 0.95);
-  border: 1px solid rgba(20, 54, 117, 0.08);
-  color: var(--text);
-}
-
 .avatar-option span,
 .tag,
 .badge-pill,
@@ -605,57 +583,6 @@ button {
 .hero-chip span,
 .progress-card__meta span {
   overflow-wrap: anywhere;
-}
-
-.avatar-option--active {
-  border-color: rgba(45, 107, 255, 0.42);
-  box-shadow: 0 10px 18px rgba(45, 107, 255, 0.12);
-}
-
-.avatar-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  color: #ffffff;
-  font-family: "Baloo 2", cursive;
-  font-weight: 800;
-  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.2);
-}
-
-.avatar-badge--small {
-  width: 42px;
-  height: 42px;
-  font-size: 0.92rem;
-}
-
-.avatar-badge--medium {
-  width: 50px;
-  height: 50px;
-  font-size: 1rem;
-}
-
-.avatar-badge--large {
-  width: 82px;
-  height: 82px;
-  font-size: 1.4rem;
-  margin-bottom: 8px;
-}
-
-.avatar-badge--green {
-  background: linear-gradient(135deg, #0f8a56, #13c376);
-}
-
-.avatar-badge--orange {
-  background: linear-gradient(135deg, #d96d00, #ff9621);
-}
-
-.avatar-badge--blue {
-  background: linear-gradient(135deg, #244cc7, #2d6bff);
-}
-
-.avatar-badge--gold {
-  background: linear-gradient(135deg, #d49300, #ffc629);
 }
 
 .demo-row,
@@ -1219,16 +1146,6 @@ textarea.input::placeholder {
   box-shadow: 0 0 0 3px rgba(74, 162, 255, 0.12);
 }
 
-.avatar-option {
-  background: rgba(9, 16, 30, 0.82);
-  border-color: rgba(113, 159, 255, 0.2);
-}
-
-.avatar-option--active {
-  border-color: rgba(255, 90, 87, 0.58);
-  box-shadow: 0 12px 24px rgba(255, 90, 87, 0.16);
-}
-
 .task-card--green {
   background: linear-gradient(150deg, rgba(16, 39, 46, 0.96), rgba(18, 55, 61, 0.96));
 }
@@ -1365,5 +1282,332 @@ textarea.input::placeholder {
   .leaderboard-row select,
   .history-row .button {
     grid-column: 1 / -1;
+  }
+}
+
+/* Minimal academy refinement */
+:root {
+  --surface: rgba(12, 20, 37, 0.9);
+  --surface-strong: #101a30;
+  --line: rgba(107, 143, 216, 0.18);
+  --text: #f6f8ff;
+  --muted: #a2b3d2;
+  --blue: #2f76d8;
+  --cyan: #67b7ff;
+  --orange: #ef4c49;
+  --navy: #081325;
+}
+
+body {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(47, 118, 216, 0.22), transparent 28%),
+    radial-gradient(circle at 86% 8%, rgba(239, 76, 73, 0.16), transparent 24%),
+    linear-gradient(180deg, #060b14 0%, #09101c 58%, #0a1220 100%);
+}
+
+.card,
+.podium-card,
+.challenge-card,
+.task-card,
+.message-banner,
+.metric-card,
+.action-card,
+.not-found-card {
+  border-color: rgba(107, 143, 216, 0.14);
+  background: linear-gradient(180deg, rgba(12, 20, 37, 0.96), rgba(15, 25, 45, 0.92));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
+}
+
+.card--highlight {
+  background: linear-gradient(145deg, rgba(18, 29, 52, 0.98), rgba(29, 39, 66, 0.96));
+}
+
+.hero-card,
+.login-hero {
+  border: 1px solid rgba(122, 156, 223, 0.14);
+  border-radius: 28px;
+}
+
+.hero-card h1,
+.login-hero h1,
+.card h2,
+.challenge-card h2,
+.task-card h2,
+.section-title h2,
+.not-found-card h1 {
+  line-height: 1.05;
+}
+
+.hero-card p,
+.login-hero p,
+.card p,
+.challenge-card p,
+.task-card p,
+.metric-card small,
+.section-title p,
+.truth-row p,
+.message-banner p,
+.empty-copy {
+  color: #a7b6d1;
+}
+
+.tag,
+.task-card__xp,
+.challenge-card__lock,
+.coach-note,
+.training-modal__progress {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(111, 145, 216, 0.14);
+}
+
+.tag {
+  color: #dceaff;
+}
+
+.button {
+  min-height: 50px;
+  border-radius: 16px;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #d63d43, #f05a49 58%, #ff7862);
+  box-shadow: 0 12px 26px rgba(214, 61, 67, 0.26);
+}
+
+.button--secondary {
+  background: linear-gradient(135deg, rgba(35, 74, 140, 0.92), rgba(47, 118, 216, 0.96));
+}
+
+.button--ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(111, 145, 216, 0.14);
+}
+
+.button--inline {
+  width: auto;
+  min-width: 108px;
+  min-height: 42px;
+  padding-inline: 14px;
+}
+
+.segment-control__button {
+  min-height: 48px;
+}
+
+.input,
+select.input,
+textarea.input {
+  background: rgba(8, 15, 28, 0.94);
+  border: 1px solid rgba(111, 145, 216, 0.18);
+  border-radius: 16px;
+  color: #f6f8ff;
+}
+
+.input:focus {
+  border-color: rgba(103, 183, 255, 0.65);
+  box-shadow: 0 0 0 3px rgba(103, 183, 255, 0.12);
+}
+
+.input--compact {
+  min-height: 42px;
+  padding-block: 10px;
+}
+
+.label {
+  gap: 10px;
+}
+
+.label--toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(107, 143, 216, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.label--toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.form-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-grid__full {
+  grid-column: 1 / -1;
+}
+
+.admin-help {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(107, 143, 216, 0.12);
+  color: #bdd0ee;
+  line-height: 1.5;
+}
+
+.admin-settings-grid {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.admin-setting-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(107, 143, 216, 0.12);
+}
+
+.admin-setting-card p {
+  margin: 0;
+}
+
+.admin-toggle {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: transparent;
+  border: 1px solid rgba(107, 143, 216, 0.18);
+  color: #dceaff;
+  font-weight: 800;
+}
+
+.leaderboard-row--admin {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.history-row,
+.leaderboard-row {
+  border-radius: 18px;
+}
+
+.podium__medal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  min-height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(103, 183, 255, 0.18));
+  color: #fff;
+  font-weight: 800;
+}
+
+.podium__medal--1 {
+  background: linear-gradient(145deg, rgba(239, 76, 73, 0.4), rgba(47, 118, 216, 0.28));
+}
+
+.academy-level-badge {
+  min-width: 92px;
+  background: linear-gradient(145deg, rgba(239, 76, 73, 0.32), rgba(47, 118, 216, 0.32));
+}
+
+.task-card {
+  gap: 16px;
+}
+
+.task-card__header,
+.challenge-card__header,
+.hero-card__top {
+  align-items: center;
+}
+
+.task-card__actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.action-card strong,
+.metric-card strong,
+.leaderboard-row__player strong,
+.profile-summary strong,
+.coach-note strong,
+.admin-setting-card strong {
+  color: #f8fbff;
+}
+
+.training-modal {
+  padding: 16px 10px 0;
+  align-items: flex-end;
+}
+
+.training-modal__sheet {
+  width: min(480px, 100%);
+  max-height: calc(100vh - 12px);
+  padding: 18px;
+  border-radius: 28px 28px 0 0;
+  background: linear-gradient(180deg, #0c162c 0%, #101b32 100%);
+  border: 1px solid rgba(121, 154, 219, 0.16);
+  color: #f7fbff;
+  box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.34);
+}
+
+.training-modal__header {
+  align-items: flex-start;
+}
+
+.training-modal__header h2,
+.training-modal__success h2 {
+  color: #ffffff;
+}
+
+.training-modal__header p,
+.training-modal__progress p,
+.training-modal__success p {
+  color: #acc0e0;
+}
+
+.training-modal__close {
+  width: auto;
+  color: #dceaff;
+}
+
+.training-modal__video {
+  min-height: 210px;
+  border: 1px solid rgba(121, 154, 219, 0.14);
+}
+
+.training-modal__video-fallback {
+  display: flex;
+  align-items: center;
+  min-height: 210px;
+  padding: 24px;
+  color: #edf5ff;
+}
+
+.training-modal .coach-note {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.training-modal__actions {
+  grid-template-columns: 1fr;
+}
+
+.xp-toast {
+  top: 14px;
+  background: linear-gradient(135deg, rgba(214, 61, 67, 0.97), rgba(47, 118, 216, 0.96));
+}
+
+@media (max-width: 520px) {
+  .form-grid--two,
+  .leaderboard-row--admin,
+  .task-card__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .training-modal__sheet {
+    padding: 16px 14px 22px;
+  }
+
+  .training-modal__video,
+  .training-modal__video-fallback {
+    min-height: 180px;
   }
 }
