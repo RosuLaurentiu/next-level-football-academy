@@ -1561,9 +1561,12 @@ textarea.input {
 }
 
 .leaderboard-row--admin {
-  grid-template-columns: minmax(0, 1fr) minmax(96px, auto) auto auto;
-  align-items: start;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(118px, 132px) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(107, 143, 216, 0.14);
+  background: linear-gradient(180deg, rgba(15, 24, 42, 0.94), rgba(18, 29, 49, 0.9));
 }
 
 .leaderboard-row__actions {
@@ -1575,18 +1578,30 @@ textarea.input {
 }
 
 .leaderboard-row--admin .input--compact {
-  width: auto;
-  min-width: 96px;
+  width: 100%;
+  min-width: 118px;
   justify-self: end;
 }
 
 .leaderboard-row--admin .button--inline {
-  min-width: 92px;
+  min-width: 102px;
   padding-inline: 12px;
 }
 
 .leaderboard-row--admin .button--danger {
   min-width: 144px;
+}
+
+.leaderboard-row--admin .leaderboard-row__player {
+  gap: 6px;
+}
+
+.leaderboard-row--admin .leaderboard-row__player span {
+  line-height: 1.5;
+}
+
+.admin-content-row {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
 }
 
 .history-row,

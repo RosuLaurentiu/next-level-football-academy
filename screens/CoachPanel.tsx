@@ -12,8 +12,14 @@ interface CoachModuleRow {
   id: number;
   category: ModuleCategory;
   title: string;
+  description: string;
   duration: string;
+  focus: string;
   xp: number;
+  difficulty_level: string | null;
+  youtube_url: string | null;
+  thumbnail_url: string | null;
+  steps: Array<{ title?: string; description?: string }> | null;
   is_active: boolean;
 }
 
@@ -58,7 +64,6 @@ interface DashboardSnapshot {
   totalUsers: number;
   activeUsersToday: number;
   completedTrainingsToday: number;
-  pendingIssues: number;
   topPlayersWeek: Array<{ username: string; xp: number }>;
 }
 
@@ -66,7 +71,6 @@ const defaultDashboard: DashboardSnapshot = {
   totalUsers: 0,
   activeUsersToday: 0,
   completedTrainingsToday: 0,
-  pendingIssues: 0,
   topPlayersWeek: [],
 };
 
@@ -125,7 +129,8 @@ export default function CoachPanel() {
   const [bonusXp, setBonusXp] = useState(100);
   const [fraudUserId, setFraudUserId] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const [newModule, setNewModule] = useState({
+  const [editingModuleId, setEditingModuleId] = useState<number | null>(null);
+  const [moduleForm, setModuleForm] = useState({
     category: "Mental" as ModuleCategory,
     title: "",
     description: "",
@@ -175,6 +180,47 @@ export default function CoachPanel() {
     setPendingDeleteId(null);
   };
 
+  const resetModuleForm = () => {
+    setEditingModuleId(null);
+    setModuleForm({
+      category: "Mental",
+      title: "",
+      description: "",
+      duration: "8 min",
+      xp: 35,
+      difficulty: "Mediu",
+      youtube: "",
+      thumbnail: "",
+      step1: "",
+      step2: "",
+      step3: "",
+      step4: "",
+      active: true,
+    });
+  };
+
+  const startEditingModule = (module: CoachModuleRow) => {
+    const steps = Array.isArray(module.steps) ? module.steps : [];
+
+    setEditingModuleId(module.id);
+    setModuleForm({
+      category: module.category,
+      title: module.title,
+      description: module.description,
+      duration: module.duration,
+      xp: module.xp,
+      difficulty: module.difficulty_level ?? "Mediu",
+      youtube: module.youtube_url ?? "",
+      thumbnail: module.thumbnail_url ?? "",
+      step1: steps[0]?.description ?? "",
+      step2: steps[1]?.description ?? "",
+      step3: steps[2]?.description ?? "",
+      step4: steps[3]?.description ?? "",
+      active: module.is_active,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const loadData = async (searchText = search) => {
     if (!supabase) {
       return false;
@@ -185,7 +231,7 @@ export default function CoachPanel() {
       supabase.from("coach_app_settings").select("*").eq("id", 1).single<AdminSettingsRow>(),
       supabase
         .from("coach_training_modules")
-        .select("id, category, title, duration, xp, is_active")
+        .select("id, category, title, description, duration, focus, xp, difficulty_level, youtube_url, thumbnail_url, steps, is_active")
         .order("created_at", { ascending: false })
         .returns<CoachModuleRow[]>(),
       supabase
@@ -277,13 +323,13 @@ export default function CoachPanel() {
     return <Navigate to="/home" replace />;
   }
 
-  const createModule = async () => {
-    if (!supabase || !newModule.title.trim() || !newModule.description.trim()) {
+  const saveModule = async () => {
+    if (!supabase || !moduleForm.title.trim() || !moduleForm.description.trim()) {
       showActionError("Completează titlul și descrierea modulului.");
       return;
     }
 
-    const steps = [newModule.step1, newModule.step2, newModule.step3, newModule.step4]
+    const steps = [moduleForm.step1, moduleForm.step2, moduleForm.step3, moduleForm.step4]
       .map((value, index) =>
         value.trim()
           ? {
@@ -294,37 +340,38 @@ export default function CoachPanel() {
       )
       .filter(Boolean);
 
-    const result = await supabase.from("coach_training_modules").insert({
-      category: newModule.category,
-      title: newModule.title.trim(),
-      description: newModule.description.trim(),
-      duration: newModule.duration.trim(),
-      focus: newModule.category,
-      xp: newModule.xp,
-      difficulty_level: newModule.difficulty,
-      youtube_url: newModule.youtube.trim() || null,
-      thumbnail_url: newModule.thumbnail.trim() || null,
+    const payload = {
+      category: moduleForm.category,
+      title: moduleForm.title.trim(),
+      description: moduleForm.description.trim(),
+      duration: moduleForm.duration.trim(),
+      focus: moduleForm.category,
+      xp: moduleForm.xp,
+      difficulty_level: moduleForm.difficulty,
+      youtube_url: moduleForm.youtube.trim() || null,
+      thumbnail_url: moduleForm.thumbnail.trim() || null,
       steps,
-      is_active: newModule.active,
-      created_by: player.userId ?? null,
-    });
+      is_active: moduleForm.active,
+    };
+
+    const result = editingModuleId
+      ? await supabase.from("coach_training_modules").update(payload).eq("id", editingModuleId)
+      : await supabase.from("coach_training_modules").insert({
+          ...payload,
+          created_by: player.userId ?? null,
+        });
 
     if (result.error) {
       showActionError(result.error.message);
     } else {
-      showActionSuccess("Modul nou salvat.", "create-module");
+      showActionSuccess(
+        editingModuleId ? "Modul actualizat." : "Modul nou salvat.",
+        editingModuleId ? "update-module" : "create-module",
+      );
     }
 
     if (!result.error) {
-      setNewModule((current) => ({
-        ...current,
-        title: "",
-        description: "",
-        step1: "",
-        step2: "",
-        step3: "",
-        step4: "",
-      }));
+      resetModuleForm();
       await loadData();
     }
   };
@@ -474,9 +521,9 @@ export default function CoachPanel() {
                 <small>Cel mai bun ritm</small>
               </div>
               <div className="metric-card">
-                <span>Probleme</span>
-                <strong>{dashboard.pendingIssues}</strong>
-                <small>Necesită atenție</small>
+                <span>Module active</span>
+                <strong>{modules.filter((module) => module.is_active).length}</strong>
+                <small>Disponibile pentru generator</small>
               </div>
               <div className="metric-card">
                 <span>Coach online</span>
@@ -546,18 +593,23 @@ export default function CoachPanel() {
           <>
             <div className="card admin-card">
               <SectionTitle
-                eyebrow="Module noi"
-                title="Creează un modul"
+                eyebrow={editingModuleId ? "Editare modul" : "Module noi"}
+                title={editingModuleId ? "Actualizeaza modulul selectat" : "Creeaza un modul"}
                 subtitle="Folosește pași scurți și clari pentru copii."
               />
+              {editingModuleId ? (
+                <div className="admin-help">
+                  Editezi un modul existent. Daca renunti, formularul revine la modul de creare.
+                </div>
+              ) : null}
               <div className="form-grid form-grid--two">
                 <label className="label">
                   Categorie
                   <select
                     className="input"
-                    value={newModule.category}
+                    value={moduleForm.category}
                     onChange={(event) =>
-                      setNewModule((current) => ({ ...current, category: event.target.value as ModuleCategory }))
+                      setModuleForm((current) => ({ ...current, category: event.target.value as ModuleCategory }))
                     }
                   >
                     <option value="Mental">Mental</option>
@@ -569,16 +621,16 @@ export default function CoachPanel() {
                   Durată
                   <input
                     className="input"
-                    value={newModule.duration}
-                    onChange={(event) => setNewModule((current) => ({ ...current, duration: event.target.value }))}
+                    value={moduleForm.duration}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, duration: event.target.value }))}
                   />
                 </label>
                 <label className="label">
                   Titlu
                   <input
                     className="input"
-                    value={newModule.title}
-                    onChange={(event) => setNewModule((current) => ({ ...current, title: event.target.value }))}
+                    value={moduleForm.title}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, title: event.target.value }))}
                   />
                 </label>
                 <label className="label">
@@ -587,86 +639,96 @@ export default function CoachPanel() {
                     className="input"
                     type="number"
                     min={0}
-                    value={newModule.xp}
-                    onChange={(event) => setNewModule((current) => ({ ...current, xp: Number(event.target.value) }))}
+                    value={moduleForm.xp}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, xp: Number(event.target.value) }))}
                   />
                 </label>
                 <label className="label form-grid__full">
                   Descriere
                   <textarea
                     className="input input--textarea"
-                    value={newModule.description}
-                    onChange={(event) => setNewModule((current) => ({ ...current, description: event.target.value }))}
+                    value={moduleForm.description}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, description: event.target.value }))}
                   />
                 </label>
                 <label className="label">
                   Video YouTube
                   <input
                     className="input"
-                    value={newModule.youtube}
-                    onChange={(event) => setNewModule((current) => ({ ...current, youtube: event.target.value }))}
+                    value={moduleForm.youtube}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, youtube: event.target.value }))}
                   />
                 </label>
                 <label className="label">
                   Thumbnail opțional
                   <input
                     className="input"
-                    value={newModule.thumbnail}
-                    onChange={(event) => setNewModule((current) => ({ ...current, thumbnail: event.target.value }))}
+                    value={moduleForm.thumbnail}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, thumbnail: event.target.value }))}
                   />
                 </label>
                 <label className="label">
                   Pas 1
                   <input
                     className="input"
-                    value={newModule.step1}
-                    onChange={(event) => setNewModule((current) => ({ ...current, step1: event.target.value }))}
+                    value={moduleForm.step1}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, step1: event.target.value }))}
                   />
                 </label>
                 <label className="label">
                   Pas 2
                   <input
                     className="input"
-                    value={newModule.step2}
-                    onChange={(event) => setNewModule((current) => ({ ...current, step2: event.target.value }))}
+                    value={moduleForm.step2}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, step2: event.target.value }))}
                   />
                 </label>
                 <label className="label">
                   Pas 3
                   <input
                     className="input"
-                    value={newModule.step3}
-                    onChange={(event) => setNewModule((current) => ({ ...current, step3: event.target.value }))}
+                    value={moduleForm.step3}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, step3: event.target.value }))}
                   />
                 </label>
                 <label className="label">
                   Pas 4
                   <input
                     className="input"
-                    value={newModule.step4}
-                    onChange={(event) => setNewModule((current) => ({ ...current, step4: event.target.value }))}
+                    value={moduleForm.step4}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, step4: event.target.value }))}
                   />
                 </label>
                 <label className="label">
                   Dificultate
                   <input
                     className="input"
-                    value={newModule.difficulty}
-                    onChange={(event) => setNewModule((current) => ({ ...current, difficulty: event.target.value }))}
+                    value={moduleForm.difficulty}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, difficulty: event.target.value }))}
                   />
                 </label>
                 <label className="label label--toggle">
                   Activ
                   <input
                     type="checkbox"
-                    checked={newModule.active}
-                    onChange={(event) => setNewModule((current) => ({ ...current, active: event.target.checked }))}
+                    checked={moduleForm.active}
+                    onChange={(event) => setModuleForm((current) => ({ ...current, active: event.target.checked }))}
                   />
                 </label>
               </div>
-              <button className={getActionButtonClass("button button--primary", "create-module")} onClick={createModule}>
-                Salvează modulul
-              </button>
+              <div className="task-card__actions">
+                <button
+                  className={getActionButtonClass("button button--primary", editingModuleId ? "update-module" : "create-module")}
+                  onClick={saveModule}
+                >
+                  {editingModuleId ? "Actualizeaza modulul" : "Salveaza modulul"}
+                </button>
+                {editingModuleId ? (
+                  <button className="button button--secondary" onClick={resetModuleForm}>
+                    Renunta la editare
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div className="card admin-card">
@@ -774,13 +836,19 @@ export default function CoachPanel() {
               />
               <div className="leaderboard-list">
                 {modules.map((module) => (
-                  <div key={`module-${module.id}`} className="leaderboard-row leaderboard-row--admin">
+                  <div key={`module-${module.id}`} className="leaderboard-row leaderboard-row--admin admin-content-row">
                     <div className="leaderboard-row__player">
                       <strong>{module.title}</strong>
                       <span>
                         {module.category} • {module.duration} • {module.xp} XP
                       </span>
                     </div>
+                    <button
+                      className={getActionButtonClass("button button--secondary button--inline", `edit-module-${module.id}`)}
+                      onClick={() => startEditingModule(module)}
+                    >
+                      Editeaza
+                    </button>
                     <button
                       className={getActionButtonClass("button button--ghost button--inline", `toggle-module-${module.id}`)}
                       onClick={async () => {
@@ -834,7 +902,7 @@ export default function CoachPanel() {
                 ))}
 
                 {challenges.map((challenge) => (
-                  <div key={`challenge-${challenge.id}`} className="leaderboard-row leaderboard-row--admin">
+                  <div key={`challenge-${challenge.id}`} className="leaderboard-row leaderboard-row--admin admin-content-row">
                     <div className="leaderboard-row__player">
                       <strong>{challenge.title}</strong>
                       <span>
@@ -907,6 +975,14 @@ export default function CoachPanel() {
             <div className="admin-help">
               Generator automat: alege conținut nou din baza de date. Programare manuală: blochează exact
               ce apare într-o anumită zi.
+            </div>
+            <div className="admin-setting-card">
+              <strong>Cum functioneaza generatorul automat</strong>
+              <p>
+                Cand este activ, aplicatia alege cate un modul activ din categoriile Mental, Fizic si Tehnic,
+                apoi adauga o provocare bonus doar in zilele permise de setarile curente. Butonul de regenerare
+                forteaza refacerea continutului pentru data selectata.
+              </p>
             </div>
             <div className="form-grid form-grid--two">
               <label className="label">
@@ -1213,23 +1289,24 @@ export default function CoachPanel() {
                     >
                       {user.is_suspended ? "Reactivează" : "Suspendă"}
                     </button>
-                    <button
-                      className={getActionButtonClass("button button--dark button--inline", `reset-${user.user_id}`)}
-                      onClick={async () => {
-                        if (!supabase || !user.email) {
-                          showActionError("Acest cont nu are email disponibil.");
-                          return;
-                        }
-                        const result = await supabase.auth.resetPasswordForEmail(user.email);
-                        if (result.error) {
-                          showActionError(result.error.message);
-                        } else {
-                          showActionSuccess("Emailul de resetare a fost trimis.", `reset-${user.user_id}`);
-                        }
-                      }}
-                    >
-                      Reset
-                    </button>
+                    {user.email ? (
+                      <button
+                        className={getActionButtonClass("button button--dark button--inline", `reset-${user.user_id}`)}
+                        onClick={async () => {
+                          if (!supabase) {
+                            return;
+                          }
+                          const result = await supabase.auth.resetPasswordForEmail(user.email!);
+                          if (result.error) {
+                            showActionError(result.error.message);
+                          } else {
+                            showActionSuccess("Emailul de resetare a fost trimis.", `reset-${user.user_id}`);
+                          }
+                        }}
+                      >
+                        Reset
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               ))}
