@@ -843,6 +843,7 @@ export default function CoachPanel() {
                         {module.category} • {module.duration} • {module.xp} XP
                       </span>
                     </div>
+                    <div className="admin-content-row__actions">
                     <button
                       className={getActionButtonClass("button button--secondary button--inline", `edit-module-${module.id}`)}
                       onClick={() => startEditingModule(module)}
@@ -898,6 +899,7 @@ export default function CoachPanel() {
                     >
                       {pendingDeleteId === `delete-module-${module.id}` ? "Confirmă ștergerea" : "Șterge"}
                     </button>
+                    </div>
                   </div>
                 ))}
 
@@ -909,6 +911,7 @@ export default function CoachPanel() {
                         {challenge.duration} • Nivel {challenge.level_required} • {challenge.xp} XP
                       </span>
                     </div>
+                    <div className="admin-content-row__actions">
                     <button
                       className={getActionButtonClass("button button--ghost button--inline", `toggle-challenge-${challenge.id}`)}
                       onClick={async () => {
@@ -958,6 +961,7 @@ export default function CoachPanel() {
                     >
                       {pendingDeleteId === `delete-challenge-${challenge.id}` ? "Confirmă ștergerea" : "Șterge"}
                     </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1242,31 +1246,32 @@ export default function CoachPanel() {
                       {user.completed_challenges}
                     </span>
                   </div>
-                  <select
-                    className="input input--compact"
-                    value={user.role}
-                    onChange={async (event) => {
-                      if (!supabase) {
-                        return;
-                      }
-                      const result = await supabase.rpc("admin_set_user_role", {
-                        target_user_id: user.user_id,
-                        next_role: event.target.value,
-                      });
-                      if (result.error) {
-                        showActionError(result.error.message);
-                      } else {
-                        showActionSuccess("Rolul a fost actualizat.", `role-${user.user_id}`);
-                      }
-                      if (!result.error) {
-                        await loadData();
-                      }
-                    }}
-                  >
-                    <option value="player">player</option>
-                    <option value="admin">admin</option>
-                  </select>
-                  <div className="leaderboard-row__actions">
+                  <div className="admin-user-row__controls">
+                    <select
+                      className="input input--compact"
+                      value={user.role}
+                      onChange={async (event) => {
+                        if (!supabase) {
+                          return;
+                        }
+                        const result = await supabase.rpc("admin_set_user_role", {
+                          target_user_id: user.user_id,
+                          next_role: event.target.value,
+                        });
+                        if (result.error) {
+                          showActionError(result.error.message);
+                        } else {
+                          showActionSuccess("Rolul a fost actualizat.", `role-${user.user_id}`);
+                        }
+                        if (!result.error) {
+                          await loadData();
+                        }
+                      }}
+                    >
+                      <option value="player">player</option>
+                      <option value="admin">admin</option>
+                    </select>
+                    <div className="leaderboard-row__actions">
                     <button
                       className={getActionButtonClass("button button--ghost button--inline", `suspend-${user.user_id}`)}
                       onClick={async () => {
@@ -1307,6 +1312,7 @@ export default function CoachPanel() {
                         Reset
                       </button>
                     ) : null}
+                    </div>
                   </div>
                 </div>
               ))}
